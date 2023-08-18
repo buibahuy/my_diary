@@ -1,16 +1,31 @@
 package com.example.mydiary
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.FabPosition
+import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.Scaffold
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import com.example.mydiary.ui.theme.MyDiaryTheme
+import com.example.mydiary.bottombar.BottomBar
+import com.example.mydiary.bottombar.BottomBarItem
+import com.example.mydiary.nav.NavigationHost
+import com.example.mydiary.ui.theme.Primary
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,25 +37,57 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
+                    MyDiary()
                 }
             }
         }
     }
 }
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
+fun MyDiary() {
+    val navController = rememberNavController()
+    val scaffoldState1 = rememberScrollState()
+    val scope = rememberCoroutineScope()
+
+    val bottomBarList = listOf(
+        BottomBarItem.Home,
+        BottomBarItem.Calender,
+        BottomBarItem.Space,
+        BottomBarItem.Gallery,
+        BottomBarItem.Setting,
     )
+
+    Scaffold(
+        bottomBar = {
+            BottomBar(navController = navController, listBarItem = bottomBarList)
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                modifier = Modifier.padding(4.dp),
+                onClick = { /*TODO*/ },
+                backgroundColor = Primary
+            ) {
+                Icon(
+                    painterResource(id = R.drawable.ic_add),
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center,
+        isFloatingActionButtonDocked = true,
+
+        ) {
+        NavigationHost(navController = navController)
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     MyDiaryTheme {
-        Greeting("Android")
+        MyDiary()
     }
 }
