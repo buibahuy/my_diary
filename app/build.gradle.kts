@@ -69,4 +69,7 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.0")
     implementation("androidx.compose.material:material:1.5.0")
+    //room database
+    implementation("androidx.room:room-runtime:2.5.2")
+    annotationProcessor("androidx.room:room-compiler:2.5.2")
 }
