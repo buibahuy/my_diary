@@ -1,5 +1,6 @@
 package com.example.mydiary.database
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.example.mydiary.R
 
@@ -7,7 +8,7 @@ sealed class Mood(
     @StringRes val name: Int,
     val icon: Int,
 ) {
-    object Default : Mood(name = R.string.mood_default_label, icon = R.drawable.ic_happy)
+    object Default : Mood(name = R.string.mood_default_label, icon = R.drawable.ic_default_mood)
     object Happy : Mood(name = R.string.mood_happy_label, icon = R.drawable.ic_happy)
     object Laughing : Mood(name = R.string.mood_laughing_label, icon = R.drawable.ic_laughing)
     object Tired : Mood(name = R.string.mood_tired_label, icon = R.drawable.ic_tired)

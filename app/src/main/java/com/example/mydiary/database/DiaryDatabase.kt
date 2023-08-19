@@ -9,5 +9,5 @@ import androidx.room.RoomDatabase
     version = 1
 )
 abstract class DiaryDatabase : RoomDatabase() {
-    abstract val diaryDao:DiaryDao
+    abstract fun diaryDao():DiaryDao
 }

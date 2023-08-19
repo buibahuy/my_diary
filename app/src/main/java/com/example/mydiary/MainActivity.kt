@@ -21,13 +21,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mydiary.bottombar.BottomBar
 import com.example.mydiary.bottombar.BottomBarItem
+import com.example.mydiary.bottombar.currentRoute
+import com.example.mydiary.nav.GRAPH
 import com.example.mydiary.nav.NavigationHost
 import com.example.mydiary.ui.theme.MyDiaryTheme
 import com.example.mydiary.ui.theme.Primary
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,22 +65,33 @@ fun MyDiary() {
         BottomBarItem.Setting,
     )
 
+    val isShowBottomBar = navController
+        .currentBackStackEntryAsState().value?.destination?.route in bottomBarList.map { it.route }
+
     Scaffold(
         scaffoldState = scaffoldState,
         bottomBar = {
-            BottomBar(navController = navController, listBarItem = bottomBarList)
+            if (isShowBottomBar) {
+                BottomBar(navController = navController, listBarItem = bottomBarList)
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier.border(width = 4.dp, color = Color.White, shape = CircleShape),
-                onClick = { /*TODO*/ },
-                backgroundColor = Primary
-            ) {
-                Icon(
-                    painterResource(id = R.drawable.ic_add),
-                    contentDescription = null,
-                    tint = Color.White
-                )
+            if (isShowBottomBar) {
+                FloatingActionButton(
+                    modifier = Modifier.border(
+                        width = 4.dp,
+                        color = Color.White,
+                        shape = CircleShape
+                    ),
+                    onClick = { navController.navigate(GRAPH.DIARY) },
+                    backgroundColor = Primary
+                ) {
+                    Icon(
+                        painterResource(id = R.drawable.ic_add),
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
             }
         },
         floatingActionButtonPosition = FabPosition.Center,
