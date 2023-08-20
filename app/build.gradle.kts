@@ -81,4 +81,7 @@ dependencies {
     kapt("androidx.hilt:hilt-compiler:1.0.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+
+    //Gson
+    implementation ("com.google.code.gson:gson:2.9.0")
 }

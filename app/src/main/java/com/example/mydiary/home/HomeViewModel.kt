@@ -11,4 +11,5 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     suspend fun getAllDiary() = diaryRepository.getAllDiary()
+    suspend fun getDiaryWithID(id: Long) = diaryRepository.getDiaryWithID(id)
 }

@@ -14,11 +14,12 @@ import com.example.mydiary.setting.SettingUI
 @Composable
 fun NavigationHost(navController: NavHostController) {
     NavHost(
-        navController = navController,
-        startDestination = BottomBarItem.Home.route
+        navController = navController, startDestination = BottomBarItem.Home.route
     ) {
         composable(BottomBarItem.Home.route) {
-            HomeUI()
+            HomeUI(onClickDiaryItem = {
+                navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(it))
+            })
         }
         composable(BottomBarItem.Calender.route) {
             CalenderUI()
