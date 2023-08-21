@@ -11,5 +11,4 @@ sealed class BottomBarItem(
     object Space : BottomBarItem(icon = R.drawable.ic_calendar, route = "space")
     object Gallery : BottomBarItem(icon = R.drawable.ic_gallery, route = "gallery")
     object Setting : BottomBarItem(icon = R.drawable.ic_setting, route = "setting")
-    object AddDiary : BottomBarItem(icon = R.drawable.ic_add, route = "add_diary")
 }
