@@ -1,12 +1,9 @@
 package com.example.mydiary.database
 
-import android.graphics.fonts.FontStyle
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.mydiary.mood.Mood
 
 @Entity(tableName = "Diary")
 data class Diary(

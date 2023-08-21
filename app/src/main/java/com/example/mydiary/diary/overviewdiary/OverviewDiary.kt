@@ -1,4 +1,4 @@
-package com.example.mydiary.diary
+package com.example.mydiary.diary.overviewdiary
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,33 +18,51 @@ import androidx.compose.material.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
+import com.example.mydiary.ui.theme.Primary
+import com.example.mydiary.util.DashLine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun OverViewDiary(
-    diary: Diary
+    diary: Diary,
+    onBackPress: () -> Unit,
+    onClickDelete: () -> Unit,
+    onEdit: (Diary) -> Unit
 ) {
+    val overViewDiaryViewModel: OverViewDiaryViewModel = hiltViewModel()
+    val coroutineScope = rememberCoroutineScope()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.End
     ) {
         IconButton(
-            onClick = {},
+            onClick = {
+                onBackPress()
+            },
             modifier = Modifier
-                .background(color = Color.Blue, shape = CircleShape)
+                .background(color = Color.White, shape = CircleShape)
                 .size(30.dp)
         ) {
-            Icon(painter = painterResource(id = R.drawable.ic_cancel), contentDescription = null)
+            Icon(
+                painter = painterResource(id = R.drawable.ic_cancel),
+                contentDescription = null,
+                tint = Primary
+            )
         }
         Spacer(modifier = Modifier.size(16.dp))
         HeaderOverviewDiary(diary = diary)
@@ -53,15 +71,11 @@ fun OverViewDiary(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .background(color= Color.Gray, shape = RoundedCornerShape(4.dp))
+                .background(color = Color.White, shape = RoundedCornerShape(4.dp))
                 .padding(16.dp),
             text = diary.content ?: ""
         )
         Spacer(modifier = Modifier.size(12.dp))
-        BottomOverviewDiary(
-            onClickDelete = {},
-            onEdit = {}
-        )
     }
 }
 
@@ -70,7 +84,7 @@ fun HeaderOverviewDiary(diary: Diary) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color= Color.Gray, shape = RoundedCornerShape(4.dp))
+            .background(color = Color.White, shape = RoundedCornerShape(4.dp))
             .padding(vertical = 8.dp, horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
@@ -81,7 +95,9 @@ fun HeaderOverviewDiary(diary: Diary) {
                 .padding(horizontal = 8.dp, vertical = 12.dp)
         ) {
             Text(text = diary.title ?: "")
-            Spacer(modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.size(10.dp))
+            DashLine(modifier = Modifier.padding(start = 16.dp), color = Color.Black)
+            Spacer(modifier = Modifier.size(10.dp))
             Text(text = diary.time?.formatLongToDate() ?: "")
         }
     }
@@ -92,23 +108,31 @@ fun BottomOverviewDiary(
     onClickDelete: () -> Unit,
     onEdit: () -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
         Row(
             modifier = Modifier
                 .weight(1f)
+                .border(width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(16.dp))
                 .background(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp)
                 )
-                .border(width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(16.dp))
                 .clickable {
                     onClickDelete()
                 }
-                .padding(vertical = 6.dp),
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Icon(painter = painterResource(id = R.drawable.ic_delete), contentDescription = null)
+            Icon(
+                modifier = Modifier.size(24.dp),
+                painter = painterResource(id = R.drawable.ic_delete),
+                contentDescription = null
+            )
             Text(text = "Delete")
         }
         Spacer(modifier = Modifier.size(8.dp))
@@ -120,23 +144,18 @@ fun BottomOverviewDiary(
                     shape = RoundedCornerShape(16.dp)
                 )
                 .clickable {
-                    onClickDelete()
+                    onEdit()
                 }
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Icon(painter = painterResource(id = R.drawable.ic_edit), contentDescription = null)
+            Icon(
+                modifier = Modifier.size(24.dp),
+                painter = painterResource(id = R.drawable.ic_edit),
+                contentDescription = null
+            )
             Text(text = "Edit")
         }
     }
-}
-
-@Preview
-@Composable
-fun PreviewDiary() {
-    BottomOverviewDiary(
-        onClickDelete = {},
-        onEdit = {}
-    )
 }

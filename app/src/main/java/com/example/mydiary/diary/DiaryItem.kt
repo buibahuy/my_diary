@@ -21,20 +21,23 @@ import androidx.compose.ui.unit.dp
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
+import com.example.mydiary.ui.theme.Primary
 
 @SuppressLint("ResourceType")
 @Composable
 fun BottomDiaryItem(
     diary: Diary,
-    onClickDiaryItem: (Diary) -> Unit
+    onClickDiaryItem: (Diary) -> Unit,
+    onClickMoreOption: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Color.Gray, shape = RoundedCornerShape(10.dp))
+            .background(color = Color.White, shape = RoundedCornerShape(10.dp))
             .clickable {
                 onClickDiaryItem(diary)
-            }.padding(16.dp),
+            }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -49,6 +52,13 @@ fun BottomDiaryItem(
             Text(text = diary.title ?: "")
             Text(text = diary.time?.formatLongToDate().toString())
         }
-        Icon(painter = painterResource(id = R.drawable.ic_more_option), contentDescription = null)
+        Icon(
+            modifier = Modifier.clickable {
+                onClickMoreOption()
+            },
+            painter = painterResource(id = R.drawable.ic_more_option),
+            contentDescription = null,
+            tint = Primary
+        )
     }
 }

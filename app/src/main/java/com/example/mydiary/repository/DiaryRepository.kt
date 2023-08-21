@@ -11,4 +11,7 @@ class DiaryRepository @Inject constructor(
     fun getAllDiary() = diaryDao.getAllDiary()
     fun getDiaryWithID(id: Long) = diaryDao.getDiaryWithID(id)
 
+    fun deleteDiary(diary: Diary) = diaryDao.deleteDiary(diary = diary)
+
+    fun updateDiary(diary: Diary) = diaryDao.updateDiary(diary = diary)
 }

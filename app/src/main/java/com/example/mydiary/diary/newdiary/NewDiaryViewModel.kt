@@ -1,4 +1,4 @@
-package com.example.mydiary.diary
+package com.example.mydiary.diary.newdiary
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,5 +15,9 @@ class NewDiaryViewModel @Inject constructor(
 ) : ViewModel() {
    suspend fun insertDiary(diary: Diary) {
         diaryRepository.insertDiary(diary = diary)
+    }
+
+    fun updateDiary(diary: Diary){
+        diaryRepository.updateDiary(diary = diary)
     }
 }

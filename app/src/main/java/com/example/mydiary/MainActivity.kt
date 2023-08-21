@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.FabPosition
@@ -18,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,37 +71,46 @@ fun MyDiary() {
     val isShowBottomBar = navController
         .currentBackStackEntryAsState().value?.destination?.route in bottomBarList.map { it.route }
 
-    Scaffold(
-        scaffoldState = scaffoldState,
-        bottomBar = {
-            if (isShowBottomBar) {
-                BottomBar(navController = navController, listBarItem = bottomBarList)
-            }
-        },
-        floatingActionButton = {
-            if (isShowBottomBar) {
-                FloatingActionButton(
-                    modifier = Modifier.border(
-                        width = 4.dp,
-                        color = Color.White,
-                        shape = CircleShape
-                    ),
-                    onClick = { navController.navigate(GRAPH.DIARY) },
-                    backgroundColor = Primary
-                ) {
-                    Icon(
-                        painterResource(id = R.drawable.ic_add),
-                        contentDescription = null,
-                        tint = Color.White
-                    )
+    Box {
+        Image(
+            modifier = Modifier.fillMaxSize(),
+            painter = painterResource(R.drawable.image_theme_default),
+            contentDescription = "background_image",
+            contentScale = ContentScale.FillBounds
+        )
+        Scaffold(
+            backgroundColor = Color.Transparent,
+            scaffoldState = scaffoldState,
+            bottomBar = {
+                if (isShowBottomBar) {
+                    BottomBar(navController = navController, listBarItem = bottomBarList)
                 }
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center,
-        isFloatingActionButtonDocked = true,
+            },
+            floatingActionButton = {
+                if (isShowBottomBar) {
+                    FloatingActionButton(
+                        modifier = Modifier.border(
+                            width = 4.dp,
+                            color = Color.White,
+                            shape = CircleShape
+                        ),
+                        onClick = { navController.navigate(GRAPH.DIARY) },
+                        backgroundColor = Primary
+                    ) {
+                        Icon(
+                            painterResource(id = R.drawable.ic_add),
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                    }
+                }
+            },
+            floatingActionButtonPosition = FabPosition.Center,
+            isFloatingActionButtonDocked = true,
 
-        ) {
-        NavigationHost(navController = navController)
+            ) {
+            NavigationHost(navController = navController)
+        }
     }
 }
 

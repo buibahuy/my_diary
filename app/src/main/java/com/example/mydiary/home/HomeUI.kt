@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeUI(
-    onClickDiaryItem: (Diary)->Unit
+    onClickDiaryItem: (Diary) -> Unit
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel()
     val listDiaryItem = remember {
@@ -47,6 +47,8 @@ fun HomeUI(
                     diary = diary,
                     onClickDiaryItem = {
                         onClickDiaryItem(diary)
+                    }, onClickMoreOption = {
+
                     })
                 Spacer(modifier = Modifier.size(8.dp))
             }
