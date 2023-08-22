@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -22,16 +24,14 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeUI(
-    onClickDiaryItem: (Diary) -> Unit
+    onClickDiaryItem: (Diary) -> Unit,
+    onClickEditDiary: (Diary) -> Unit
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel()
-    val listDiaryItem = remember {
-        mutableStateOf(listOf<Diary>())
-    }
+    val scope = rememberCoroutineScope()
+    val listDiaryItem by homeViewModel.listDiary.collectAsState()
     LaunchedEffect(homeViewModel) {
-        this.launch(Dispatchers.IO) {
-            listDiaryItem.value = homeViewModel.getAllDiary()
-        }
+        this.launch(Dispatchers.IO) { homeViewModel.getAllDiary() }
     }
     Column(
         modifier = Modifier
@@ -42,13 +42,19 @@ fun HomeUI(
 
         }
         LazyColumn {
-            items(listDiaryItem.value) { diary ->
+            items(listDiaryItem) { diary ->
                 BottomDiaryItem(
                     diary = diary,
                     onClickDiaryItem = {
                         onClickDiaryItem(diary)
-                    }, onClickMoreOption = {
-
+                    },
+                    onClickDelete = {
+                        scope.launch(Dispatchers.IO) {
+                            homeViewModel.deleteDiary(diary = diary)
+                        }
+                    },
+                    onClickEdit = { diary ->
+                        onClickEditDiary(diary)
                     })
                 Spacer(modifier = Modifier.size(8.dp))
             }

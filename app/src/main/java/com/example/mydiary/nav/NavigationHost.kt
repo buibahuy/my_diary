@@ -18,6 +18,8 @@ fun NavigationHost(navController: NavHostController) {
         composable(BottomBarItem.Home.route) {
             HomeUI(onClickDiaryItem = {
                 navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(it))
+            }, onClickEditDiary = { diaryNav->
+                navController.navigate(NewDiary.AddDiary.navigateWithDiary(diaryNav))
             })
         }
         composable(BottomBarItem.Calender.route) {

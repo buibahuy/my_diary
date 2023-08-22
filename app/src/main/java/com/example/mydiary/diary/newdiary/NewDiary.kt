@@ -185,7 +185,9 @@ fun NewDiaryUI(
         if (showModalSheet) {
             ModalBottomSheet(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .padding(bottom = 56.dp)
+                    .fillMaxWidth()
+                ,
                 onDismissRequest = {
                     showModalSheet = false
                 },
