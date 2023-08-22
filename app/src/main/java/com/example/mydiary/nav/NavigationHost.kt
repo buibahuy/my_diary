@@ -6,7 +6,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.mydiary.bottombar.BottomBarItem
 import com.example.mydiary.calender.CalenderUI
-import com.example.mydiary.diary.NewDiaryUI
 import com.example.mydiary.gallery.GalleryUI
 import com.example.mydiary.home.HomeUI
 import com.example.mydiary.setting.SettingUI
@@ -19,6 +18,8 @@ fun NavigationHost(navController: NavHostController) {
         composable(BottomBarItem.Home.route) {
             HomeUI(onClickDiaryItem = {
                 navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(it))
+            }, onClickEditDiary = { diaryNav->
+                navController.navigate(NewDiary.AddDiary.navigateWithDiary(diaryNav))
             })
         }
         composable(BottomBarItem.Calender.route) {
