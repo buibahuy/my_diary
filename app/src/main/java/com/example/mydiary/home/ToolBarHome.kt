@@ -14,7 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.mydiary.R
 
 @Composable
@@ -30,20 +33,21 @@ fun ToolBarHome(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        Text(text = "My Diary")
+        Text(text = "My Diary", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.weight(1f))
         Icon(
             modifier = Modifier
                 .clickable {
                     onClickSearch()
                 }
-                .size(16.dp),
+                .size(24.dp),
             painter = painterResource(id = R.drawable.ic_preview),
             contentDescription = null
         )
+        Spacer(modifier = Modifier.size(16.dp))
         Icon(
             modifier = Modifier
-                .size(16.dp)
+                .size(24.dp)
                 .clickable {
                     onClickSort()
                 }
@@ -52,5 +56,13 @@ fun ToolBarHome(
             contentDescription = null
         )
 
+    }
+}
+
+@Preview
+@Composable
+fun PreviewToolBarHome() {
+    ToolBarHome(onClickSearch = { /*TODO*/ }) {
+        
     }
 }
