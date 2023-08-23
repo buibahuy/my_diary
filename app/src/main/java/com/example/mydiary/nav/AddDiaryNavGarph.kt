@@ -1,5 +1,6 @@
 package com.example.mydiary.nav
 
+import android.util.Log
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -11,6 +12,8 @@ import com.example.mydiary.database.Diary
 import com.example.mydiary.diary.newdiary.NewDiaryUI
 import com.example.mydiary.diary.overviewdiary.OverViewDiary
 import com.google.gson.Gson
+import okio.ByteString.Companion.encode
+import java.net.URLEncoder
 
 fun NavGraphBuilder.addDiaryNavGraph(navController: NavController) {
     navigation(
@@ -40,6 +43,7 @@ fun NavGraphBuilder.addDiaryNavGraph(navController: NavController) {
         ) {
             val diaryJson = it.arguments!!.getString("diary")
             val diary = Gson().fromJson(diaryJson, Diary::class.java)
+            Log.d("Tag1234","---$diary")
             OverViewDiary(
                 diary = diary,
                 onBackPress = { navController.navigateUp() },
@@ -67,7 +71,8 @@ sealed class NewDiary(
         fun navigateWithDiary(diary: Diary): String {
             val gson = Gson()
             val json = gson.toJson(diary)
-            return "overview_diary/$json"
+            val jsonencode = URLEncoder.encode(json, "utf-8")
+            return "overview_diary/$jsonencode"
         }
     }
 }

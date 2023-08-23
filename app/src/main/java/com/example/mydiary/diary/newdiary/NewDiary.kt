@@ -2,6 +2,7 @@ package com.example.mydiary.diary.newdiary
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
+import android.net.Uri
 import android.widget.DatePicker
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -74,6 +75,12 @@ fun NewDiaryUI(
 
     val bottomSheetState = rememberModalBottomSheetState()
 
+    val bottomSheetStateBackground = rememberModalBottomSheetState()
+
+    var backgroundSelected by remember {
+        mutableIntStateOf(R.drawable.background_1)
+    }
+
     var showModalSheet by rememberSaveable {
         mutableStateOf(diary?.mood == null)
     }
@@ -100,171 +107,217 @@ fun NewDiaryUI(
         mutableStateOf(timeFormat.formatLongToDate())
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        ToolBarDiary(
-            onClickBack = onClickBack,
-            onClickPreview = onClickPreview,
-            onClickSave = {
-                val diary1 = Diary(
-                    title = title,
-                    content = content,
-                    mood = selectedMood,
-                    time = time,
-                    background = 1,
-                    tag = "1"
-                )
-                coroutineScope.launch(Dispatchers.IO) {
-                    if (diary == null)
-                        newDiaryViewModel.insertDiary(diary1)
-                    else {
-                        newDiaryViewModel.updateDiary(diary1.copy(id = diary.id))
+    var imageUrisState by remember {
+        mutableStateOf(diary?.photo ?: emptyList())
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            modifier = Modifier.fillMaxSize(),
+            painter = painterResource(backgroundSelected),
+            contentDescription = "background_image",
+            contentScale = ContentScale.FillBounds
+        )
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            ToolBarDiary(
+                onClickBack = onClickBack,
+                onClickPreview = onClickPreview,
+                onClickSave = {
+                    val diary1 = Diary(
+                        title = title,
+                        content = content,
+                        mood = selectedMood,
+                        time = time,
+                        photo = imageUrisState,
+                        background = 1,
+                        tag = "1"
+                    )
+                    coroutineScope.launch(Dispatchers.IO) {
+                        if (diary == null)
+                            newDiaryViewModel.insertDiary(diary1)
+                        else {
+                            newDiaryViewModel.updateDiary(diary1.copy(id = diary.id))
+                        }
                     }
+                    onClickSave()
                 }
-                onClickSave()
-            }
-        )
-
-        val mYear: Int = mCalendar.get(Calendar.YEAR)
-        val mMonth: Int = mCalendar.get(Calendar.MONTH)
-        val mDay: Int = mCalendar.get(Calendar.DAY_OF_MONTH)
-
-        HeaderDiary(
-            mood = selectedMood,
-            title = title ?: "",
-            time = mDate.value,
-            onTitleChange = onTitleChange,
-            onClickMood = {
-                showModalSheet = true
-            },
-            onClickTime = {
-                val mDatePickerDialog = DatePickerDialog(
-                    mContext,
-                    { _: DatePicker, year: Int, month: Int, mDayOfMonth: Int ->
-                        mCalendar.set(year, month, mDayOfMonth)
-                        val long = mCalendar.time.time
-                        val dayOfWeek: String = mCalendar.time.time.formatLongToDate()
-                        mDate.value = dayOfWeek
-                        time = long
-                    }, mYear, mMonth, mDay
-                )
-                mDatePickerDialog.show()
-            }
-        )
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-        ) {
-            Image(
-                modifier = Modifier.fillMaxSize(),
-                painter = painterResource(R.drawable.background_content_default_theme),
-                contentDescription = "background_image",
-                contentScale = ContentScale.FillBounds
             )
-            TextField(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(start = 40.dp, top = 16.dp, end = 40.dp),
-                value = content ?: "",
-                onValueChange = onContentChange,
-                placeholder = {
-                    Text(text = "Enter content")
-                }, colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent
-                )
-            )
-        }
 
-        BottomDiary(onClickBottomDiary = {
+            val mYear: Int = mCalendar.get(Calendar.YEAR)
+            val mMonth: Int = mCalendar.get(Calendar.MONTH)
+            val mDay: Int = mCalendar.get(Calendar.DAY_OF_MONTH)
 
-        })
-
-        if (showModalSheet) {
-            ModalBottomSheet(
-                modifier = Modifier
-                    .padding(bottom = 56.dp)
-                    .fillMaxWidth()
-                ,
-                onDismissRequest = {
-                    showModalSheet = false
+            HeaderDiary(
+                mood = selectedMood,
+                title = title ?: "",
+                time = mDate.value,
+                onTitleChange = onTitleChange,
+                onClickMood = {
+                    showModalSheet = true
                 },
-                sheetState = bottomSheetState
-            ) {
-                val (textSearch, onTextSearchChange) = remember {
-                    mutableStateOf("")
+                onClickTime = {
+                    val mDatePickerDialog = DatePickerDialog(
+                        mContext,
+                        { _: DatePicker, year: Int, month: Int, mDayOfMonth: Int ->
+                            mCalendar.set(year, month, mDayOfMonth)
+                            val long = mCalendar.time.time
+                            val dayOfWeek: String = mCalendar.time.time.formatLongToDate()
+                            mDate.value = dayOfWeek
+                            time = long
+                        }, mYear, mMonth, mDay
+                    )
+                    mDatePickerDialog.show()
                 }
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = "How are you today?",
-                    textAlign = TextAlign.Center
-                )
-                TextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .clip(
-                            RoundedCornerShape(10.dp)
-                        ), colors = TextFieldDefaults.textFieldColors(
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent
-                    ),
-                    value = textSearch,
-                    onValueChange = onTextSearchChange,
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_search),
-                            contentDescription = null
-                        )
+            )
+//            Box(
+//                modifier = Modifier
+//                    .weight(1f)
+//                    .fillMaxWidth()
+//                    .padding(horizontal = 16.dp),
+//            ) {
+//                Image(
+//                    modifier = Modifier.fillMaxSize(),
+//                    painter = painterResource(R.drawable.background_content_default_theme),
+//                    contentDescription = "background_image",
+//                    contentScale = ContentScale.FillBounds
+//                )
+//                TextField(
+//                    modifier = Modifier
+//                        .wrapContentSize()
+//                        .padding(start = 40.dp, top = 16.dp, end = 40.dp),
+//                    value = content ?: "",
+//                    onValueChange = onContentChange,
+//                    placeholder = {
+//                        Text(text = "Enter content")
+//                    }, colors = TextFieldDefaults.textFieldColors(
+//                        backgroundColor = Color.Transparent,
+//                        unfocusedIndicatorColor = Color.Transparent,
+//                        focusedIndicatorColor = Color.Transparent
+//                    )
+//                )
+//            }
+            ContentDiary(
+                scope = coroutineScope,
+                listImage = imageUrisState,
+                onListUriChange = { uri ->
+                    imageUrisState = uri.map { it.toString() }
+                })
+            BottomDiary(onClickBottomDiary = { bottomDiaryItem ->
+                when (bottomDiaryItem) {
+                    BottomDiaryItem.BackGround -> {
+                        coroutineScope.launch {
+                            bottomSheetStateBackground.show()
+                        }
+                    }
+
+                    BottomDiaryItem.TextFont -> {
+
+                    }
+
+                    BottomDiaryItem.Image -> {
+
+                    }
+
+                    BottomDiaryItem.Tag -> {
+
+                    }
+                }
+            })
+
+            if (bottomSheetStateBackground.isVisible) {
+                BottomBarBackground(
+                    backgroundSelected = backgroundSelected,
+                    onBackgroundChange = {
+                        backgroundSelected = it
                     },
-                    placeholder = {
-                        Text(text = "Search")
-                    }
+                    bottomSheetState = bottomSheetStateBackground,
+                    scope = coroutineScope
                 )
-
-                val listMood = Mood.getListMood()
-
-                LazyVerticalGrid(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                    columns = GridCells.Fixed(4),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    content = {
-                        items(listMood) { item: Mood ->
-                            val isSelected = selectedMood == item.icon
-                            val modifierSelected = if (isSelected) Modifier.border(
-                                width = if (isSelected) 2.dp else 0.dp,
-                                color = Primary,
-                                shape = RoundedCornerShape(12.dp)
-                            ) else Modifier
-                            ItemMoodBottomSheet(
-                                modifier = modifierSelected,
-                                isSelected = item.icon == selectedMood,
-                                mood = item,
-                                onClickMood = {
-                                    selectedMood = item.icon
-                                })
-                        }
-                    }
-                )
-                Text(
+            }
+            if (showModalSheet) {
+                ModalBottomSheet(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp, horizontal = 16.dp)
-                        .clickable {
-                            showModalSheet = false
+                        .padding(bottom = 56.dp)
+                        .fillMaxWidth(),
+                    onDismissRequest = {
+                        showModalSheet = false
+                    },
+                    sheetState = bottomSheetState
+                ) {
+                    val (textSearch, onTextSearchChange) = remember {
+                        mutableStateOf("")
+                    }
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = "How are you today?",
+                        textAlign = TextAlign.Center
+                    )
+                    TextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .clip(
+                                RoundedCornerShape(10.dp)
+                            ), colors = TextFieldDefaults.textFieldColors(
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent
+                        ),
+                        value = textSearch,
+                        onValueChange = onTextSearchChange,
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_search),
+                                contentDescription = null
+                            )
+                        },
+                        placeholder = {
+                            Text(text = "Search")
                         }
-                        .background(color = Primary, shape = RoundedCornerShape(10.dp))
-                        .padding(vertical = 8.dp, horizontal = 16.dp),
-                    text = "Apply",
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.White
-                )
+                    )
+
+                    val listMood = Mood.getListMood()
+
+                    LazyVerticalGrid(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        columns = GridCells.Fixed(4),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        content = {
+                            items(listMood) { item: Mood ->
+                                val isSelected = selectedMood == item.icon
+                                val modifierSelected = if (isSelected) Modifier.border(
+                                    width = if (isSelected) 2.dp else 0.dp,
+                                    color = Primary,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) else Modifier
+                                ItemMoodBottomSheet(
+                                    modifier = modifierSelected,
+                                    isSelected = item.icon == selectedMood,
+                                    mood = item,
+                                    onClickMood = {
+                                        selectedMood = item.icon
+                                    })
+                            }
+                        }
+                    )
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp, horizontal = 16.dp)
+                            .clickable {
+                                showModalSheet = false
+                            }
+                            .background(color = Primary, shape = RoundedCornerShape(10.dp))
+                            .padding(vertical = 8.dp, horizontal = 16.dp),
+                        text = "Apply",
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
@@ -357,9 +410,14 @@ fun BottomDiary(
                     .padding(vertical = 4.dp)
                     .clickable {
                         onClickBottomDiary(item)
-                    }.padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally
+                    }
+                    .padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(painter = painterResource(id = item.icon), contentDescription = null, tint = Color.White)
+                Icon(
+                    painter = painterResource(id = item.icon),
+                    contentDescription = null,
+                    tint = Color.White
+                )
                 Spacer(modifier = Modifier.size(4.dp))
                 Text(text = item.text, color = Color.White)
             }

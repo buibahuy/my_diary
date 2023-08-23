@@ -1,5 +1,8 @@
 package com.example.mydiary.diary.overviewdiary
 
+import android.net.Uri
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.IconButton
@@ -25,7 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
@@ -75,6 +82,18 @@ fun OverViewDiary(
                 .padding(16.dp),
             text = diary.content ?: ""
         )
+        LazyColumn(modifier = Modifier
+            .weight(1f)
+            .fillMaxSize()
+            .background(color = Color.White, shape = RoundedCornerShape(4.dp))
+            .padding(16.dp)
+        ) {
+            items(diary.photo.map { Uri.parse(it) }) {
+                AsyncImage(model = it, contentDescription = null)
+
+            }
+
+        }
         Spacer(modifier = Modifier.size(12.dp))
     }
 }
