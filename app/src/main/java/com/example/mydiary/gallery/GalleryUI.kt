@@ -33,7 +33,7 @@ fun GalleryUI() {
         it.time
     }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        grouped.forEach { time,listDiary->
+        grouped.forEach { (time, listDiary) ->
             stickyHeader {
                 Text(text = time.formatLongToDate())
             }

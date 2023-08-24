@@ -9,6 +9,7 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.DatePicker
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,26 +20,39 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,13 +61,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -70,16 +91,18 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
-@SuppressLint("SimpleDateFormat")
+@SuppressLint("SimpleDateFormat", "MutableCollectionMutableState")
 @Composable
 fun NewDiaryUI(
     diary: Diary? = null,
     onClickBack: () -> Unit = {},
-    onClickPreview: () -> Unit = {},
+    onClickPreview: (Diary) -> Unit = {},
     onClickSave: () -> Unit = {},
     onClickMood: () -> Unit = {}
 ) {
@@ -87,12 +110,13 @@ fun NewDiaryUI(
     val mCalendar = Calendar.getInstance()
     val mContext = LocalContext.current
     val newDiaryViewModel: NewDiaryViewModel = hiltViewModel()
+    val focusManager = LocalFocusManager.current
 
     val bottomSheetState = rememberModalBottomSheetState()
 
     val bottomSheetStateBackground = rememberModalBottomSheetState()
 
-    var backgroundSelected by remember {
+    var backgroundSelected by rememberSaveable {
         mutableIntStateOf(R.drawable.background_1)
     }
 
@@ -100,21 +124,30 @@ fun NewDiaryUI(
         mutableStateOf(diary?.mood == null)
     }
 
-    val (title, onTitleChange) = remember {
+    val (title, onTitleChange) = rememberSaveable {
         mutableStateOf(if (diary != null) diary.title else "")
     }
-    val (content, onContentChange) = remember {
+    val (content, onContentChange) = rememberSaveable {
         mutableStateOf(if (diary != null) diary.content else "")
     }
-    var time by remember {
+
+    val (contentSecond, onContentSecondChange) = rememberSaveable {
+        mutableStateOf(if (diary != null) diary.contentSecond else "")
+    }
+
+    var time by rememberSaveable {
         mutableStateOf(if (diary != null) diary.time else mCalendar.time.time)
     }
 
-    var selectedMood by remember {
+    var selectedMood by rememberSaveable {
         mutableIntStateOf(diary?.mood ?: Mood.Default.icon)
     }
 
-    val mDate = remember {
+    var listTag by rememberSaveable {
+        mutableStateOf(diary?.listTag?: listOf())
+    }
+
+    val mDate = rememberSaveable {
         val timeFormat = if (diary != null)
             diary.time
         else mCalendar.time.time
@@ -122,14 +155,14 @@ fun NewDiaryUI(
         mutableStateOf(timeFormat.formatLongToDate())
     }
 
-    var imageUrisStateString by remember {
+    var imageUrisStateString by rememberSaveable {
         mutableStateOf(diary?.photo ?: emptyList())
     }
 
     val cameraPermissionState =
         rememberPermissionState(Manifest.permission.READ_EXTERNAL_STORAGE)
 
-    var imageUrisState by remember {
+    var imageUrisState by rememberSaveable {
         mutableStateOf<List<Uri?>>(imageUrisStateString.map { Uri.parse(it) })
     }
     var bitmap by remember {
@@ -152,7 +185,9 @@ fun NewDiaryUI(
         imageUrisState += it
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .clickable { focusManager.clearFocus() }) {
         Image(
             modifier = Modifier.fillMaxSize(),
             painter = painterResource(backgroundSelected),
@@ -161,19 +196,21 @@ fun NewDiaryUI(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
+            val diary1 = Diary(
+                title = title,
+                content = content,
+                contentSecond = contentSecond,
+                mood = selectedMood,
+                time = time,
+                photo = imageUrisStateString,
+                background = 1,
+                listTag = listTag.toList()
+            )
             ToolBarDiary(
                 onClickBack = onClickBack,
-                onClickPreview = onClickPreview,
+                onClickPreview = { onClickPreview(diary1) },
                 onClickSave = {
-                    val diary1 = Diary(
-                        title = title,
-                        content = content,
-                        mood = selectedMood,
-                        time = time,
-                        photo = imageUrisStateString,
-                        background = 1,
-                        tag = "1"
-                    )
+
                     coroutineScope.launch(Dispatchers.IO) {
                         if (diary == null)
                             newDiaryViewModel.insertDiary(diary1)
@@ -224,7 +261,24 @@ fun NewDiaryUI(
                     contentDescription = "background_image",
                     contentScale = ContentScale.FillBounds
                 )
+
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    item {
+                        TextField(
+                            value = content ?: "",
+                            placeholder = {
+                                Text(text = "Enter content...")
+                            },
+                            onValueChange = onContentChange,
+                            colors = TextFieldDefaults.textFieldColors(
+                                backgroundColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                        )
+                    }
                     items(imageUrisState) {
                         it?.let {
                             bitmap = if (Build.VERSION.SDK_INT < 28) {
@@ -235,6 +289,65 @@ fun NewDiaryUI(
                             }
                         }
                         Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
+                    }
+                    if (imageUrisState.isNotEmpty()) {
+                        item {
+                            TextField(
+                                value = contentSecond ?: "",
+                                placeholder = {
+                                    Text(text = "Enter content...")
+                                },
+                                onValueChange = onContentSecondChange,
+                                colors = TextFieldDefaults.textFieldColors(
+                                    backgroundColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent
+                                ),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                            )
+                        }
+                    }
+                    item {
+                        LazyRow(modifier = Modifier.fillMaxWidth()) {
+                            itemsIndexed(listTag) { index : Int, tag: String ->
+                                val (tagChange, onTagChange) = remember {
+                                    mutableStateOf(tag)
+                                }
+                                TextField(
+                                    modifier = Modifier
+                                        .padding(horizontal = 4.dp)
+                                        .background(
+                                            color = Color.Black.copy(alpha = 0.5f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .widthIn(1.dp, Dp.Infinity),
+                                    value = tagChange,
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = {
+                                                val mutableList = listTag.toMutableList()
+                                                mutableList.removeAt(index)
+                                                listTag = mutableList.toList()
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Clear"
+                                            )
+                                        }
+                                    },
+                                    onValueChange = onTagChange,
+                                    colors = TextFieldDefaults.textFieldColors(
+                                        backgroundColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent
+                                    ),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -262,7 +375,7 @@ fun NewDiaryUI(
                     }
 
                     BottomDiaryItem.Tag -> {
-
+                        listTag += ""
                     }
                 }
             })

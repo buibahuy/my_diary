@@ -54,6 +54,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun OverViewDiary(
     diary: Diary,
+    isPreview: Boolean = true,
     onBackPress: () -> Unit,
     onClickDelete: () -> Unit,
     onEdit: (Diary) -> Unit
@@ -61,12 +62,12 @@ fun OverViewDiary(
     val overViewDiaryViewModel: OverViewDiaryViewModel = hiltViewModel()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-    var bitmap by remember { mutableStateOf<Bitmap?>( null) }
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-         verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.End
     ) {
         IconButton(
@@ -86,24 +87,29 @@ fun OverViewDiary(
         Spacer(modifier = Modifier.size(16.dp))
         HeaderOverviewDiary(diary = diary)
         Spacer(modifier = Modifier.size(8.dp))
-        LazyColumn(modifier = Modifier
-            .weight(1f)
-            .fillMaxSize()
-            .background(color = Color.White, shape = RoundedCornerShape(4.dp))
-            .padding(16.dp)
+        Text(text = diary.content ?: "")
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxSize()
+                .background(color = Color.White, shape = RoundedCornerShape(4.dp))
+                .padding(16.dp)
         ) {
             items(diary.photo.map { Uri.parse(it) }) {
-                    it?.let {
-                        bitmap = if (Build.VERSION.SDK_INT < 28){
-                            MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-                        } else{
-                            val source = ImageDecoder.createSource(context.contentResolver, it)
-                            ImageDecoder.decodeBitmap(source)
-                        }
+                it?.let {
+                    bitmap = if (Build.VERSION.SDK_INT < 28) {
+                        MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                    } else {
+                        val source = ImageDecoder.createSource(context.contentResolver, it)
+                        ImageDecoder.decodeBitmap(source)
                     }
-                    Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
+                }
+                Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
             }
 
+        }
+        diary.contentSecond?.let {
+            Text(text = it)
         }
         Spacer(modifier = Modifier.size(12.dp))
     }

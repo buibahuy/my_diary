@@ -31,7 +31,12 @@ fun NavGraphBuilder.addDiaryNavGraph(navController: NavController) {
             NewDiaryUI(
                 diary = diary,
                 onClickBack = { navController.navigateUp() },
-                onClickSave = { navController.navigate(BottomBarItem.Home.route) }
+                onClickSave = { navController.navigate(BottomBarItem.Home.route) },
+                onClickPreview = { diaryPreview->
+                    navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(diaryPreview)){
+                        restoreState = true
+                    }
+                }
             )
         }
         composable(NewDiary.OverViewDiary.route,

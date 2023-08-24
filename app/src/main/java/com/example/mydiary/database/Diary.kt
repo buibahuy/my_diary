@@ -16,6 +16,8 @@ data class Diary(
     var title: String? = null,
     @ColumnInfo("content")
     var content: String? = null,
+    @ColumnInfo("content_second")
+    var contentSecond: String? = null,
     @ColumnInfo("mood")
     var mood: Int = Mood.Default.icon,
     @ColumnInfo("time")
@@ -31,7 +33,7 @@ data class Diary(
 //    @ColumnInfo("textColor")
 //    var textColor: Color? = null,
     @ColumnInfo("tag")
-    var tag: String? = null
+    var listTag: List<String>? = null
 )
 
 class Converters {
