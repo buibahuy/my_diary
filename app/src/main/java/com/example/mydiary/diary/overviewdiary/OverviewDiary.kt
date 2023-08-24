@@ -1,6 +1,7 @@
 package com.example.mydiary.diary.overviewdiary
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -89,6 +90,7 @@ fun OverViewDiary(
             .padding(16.dp)
         ) {
             items(diary.photo.map { Uri.parse(it) }) {
+                Log.d("Tag123","----$it")
                 AsyncImage(model = it, contentDescription = null)
 
             }

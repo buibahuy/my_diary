@@ -198,6 +198,7 @@ fun NewDiaryUI(
 //                )
 //            }
             ContentDiary(
+                modifier = Modifier.weight(1f),
                 scope = coroutineScope,
                 listImage = imageUrisState,
                 onListUriChange = { uri ->
