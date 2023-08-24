@@ -1,9 +1,17 @@
 package com.example.mydiary.diary.newdiary
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.widget.DatePicker
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,14 +26,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -54,11 +66,14 @@ import com.example.mydiary.mood.ItemMoodBottomSheet
 import com.example.mydiary.mood.Mood
 import com.example.mydiary.ui.theme.Primary
 import com.example.mydiary.util.DashLine
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @SuppressLint("SimpleDateFormat")
 @Composable
 fun NewDiaryUI(
@@ -107,8 +122,34 @@ fun NewDiaryUI(
         mutableStateOf(timeFormat.formatLongToDate())
     }
 
-    var imageUrisState by remember {
+    var imageUrisStateString by remember {
         mutableStateOf(diary?.photo ?: emptyList())
+    }
+
+    val cameraPermissionState =
+        rememberPermissionState(Manifest.permission.READ_EXTERNAL_STORAGE)
+
+    var imageUrisState by remember {
+        mutableStateOf<List<Uri?>>(imageUrisStateString.map { Uri.parse(it) })
+    }
+    var bitmap by remember {
+        mutableStateOf<Bitmap?>(null)
+    }
+
+    LaunchedEffect(imageUrisState) {
+        imageUrisStateString = imageUrisState.map { uri -> uri.toString() }
+        imageUrisState.forEach { uri ->
+            if (uri != null)
+                mContext.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+        }
+    }
+    val multiplePhotoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) {
+        imageUrisState += it
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -129,7 +170,7 @@ fun NewDiaryUI(
                         content = content,
                         mood = selectedMood,
                         time = time,
-                        photo = imageUrisState,
+                        photo = imageUrisStateString,
                         background = 1,
                         tag = "1"
                     )
@@ -170,39 +211,34 @@ fun NewDiaryUI(
                     mDatePickerDialog.show()
                 }
             )
-//            Box(
-//                modifier = Modifier
-//                    .weight(1f)
-//                    .fillMaxWidth()
-//                    .padding(horizontal = 16.dp),
-//            ) {
-//                Image(
-//                    modifier = Modifier.fillMaxSize(),
-//                    painter = painterResource(R.drawable.background_content_default_theme),
-//                    contentDescription = "background_image",
-//                    contentScale = ContentScale.FillBounds
-//                )
-//                TextField(
-//                    modifier = Modifier
-//                        .wrapContentSize()
-//                        .padding(start = 40.dp, top = 16.dp, end = 40.dp),
-//                    value = content ?: "",
-//                    onValueChange = onContentChange,
-//                    placeholder = {
-//                        Text(text = "Enter content")
-//                    }, colors = TextFieldDefaults.textFieldColors(
-//                        backgroundColor = Color.Transparent,
-//                        unfocusedIndicatorColor = Color.Transparent,
-//                        focusedIndicatorColor = Color.Transparent
-//                    )
-//                )
-//            }
-            ContentDiary(
-                scope = coroutineScope,
-                listImage = imageUrisState,
-                onListUriChange = { uri ->
-                    imageUrisState = uri.map { it.toString() }
-                })
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+            )
+            {
+                Image(
+                    modifier = Modifier.fillMaxSize(),
+                    painter = painterResource(R.drawable.background_content_default_theme),
+                    contentDescription = "background_image",
+                    contentScale = ContentScale.FillBounds
+                )
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(imageUrisState) {
+                        it?.let {
+                            bitmap = if (Build.VERSION.SDK_INT < 28) {
+                                MediaStore.Images.Media.getBitmap(mContext.contentResolver, it)
+                            } else {
+                                val source = ImageDecoder.createSource(mContext.contentResolver, it)
+                                ImageDecoder.decodeBitmap(source)
+                            }
+                        }
+                        Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
+                    }
+                }
+            }
+
             BottomDiary(onClickBottomDiary = { bottomDiaryItem ->
                 when (bottomDiaryItem) {
                     BottomDiaryItem.BackGround -> {
@@ -216,7 +252,13 @@ fun NewDiaryUI(
                     }
 
                     BottomDiaryItem.Image -> {
-
+                        if (cameraPermissionState.status.isGranted) {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                multiplePhotoPicker.launch(arrayOf("image/*"))
+                            }
+                        } else {
+                            cameraPermissionState.launchPermissionRequest()
+                        }
                     }
 
                     BottomDiaryItem.Tag -> {

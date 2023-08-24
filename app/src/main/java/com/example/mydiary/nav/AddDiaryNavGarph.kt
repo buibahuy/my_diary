@@ -63,7 +63,8 @@ sealed class NewDiary(
         fun navigateWithDiary(diary: Diary): String {
             val gson = Gson()
             val json = gson.toJson(diary)
-            return "add_diary/$json"
+            val jsonencode = URLEncoder.encode(json, "utf-8")
+            return "add_diary/$jsonencode"
         }
     }
 

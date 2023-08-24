@@ -53,7 +53,7 @@ fun HomeUI(
                             homeViewModel.deleteDiary(diary = diary)
                         }
                     },
-                    onClickEdit = { diary ->
+                    onClickEdit = {
                         onClickEditDiary(diary)
                     })
                 Spacer(modifier = Modifier.size(8.dp))
