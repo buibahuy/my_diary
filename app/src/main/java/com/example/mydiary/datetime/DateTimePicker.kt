@@ -10,7 +10,7 @@ import java.util.Date
 import java.util.regex.Pattern
 
 @SuppressLint("SimpleDateFormat", "SuspiciousIndentation")
-fun Long?.formatLongToDate(pattern: String ="EEEE dd MM yyyy"): String {
+fun Long?.formatLongToDate(pattern: String ="EEEE,dd/MM/yyyy,HH:mm"): String {
  val simpleDateFormat = SimpleDateFormat(pattern)
     return simpleDateFormat.format(this ?: 0)
 }
