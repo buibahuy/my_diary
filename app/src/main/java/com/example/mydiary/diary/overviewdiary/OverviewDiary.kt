@@ -5,13 +5,12 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,17 +35,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
@@ -67,79 +63,89 @@ fun OverViewDiary(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.End
-    ) {
-        Spacer(modifier = Modifier.size(8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = "Preview",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+    Box(modifier = Modifier.fillMaxSize()) {
+        diary.background?.let {
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                painter = painterResource(it),
+                contentDescription = "background_image",
+                contentScale = ContentScale.FillBounds
             )
-            IconButton(
-                onClick = {
-                    onBackPress()
-                },
-                modifier = Modifier
-                    .background(color = Color.White, shape = CircleShape)
-                    .size(30.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_cancel),
-                    contentDescription = null,
-                    tint = Primary
-                )
-            }
         }
-        Spacer(modifier = Modifier.size(12.dp))
-        HeaderOverviewDiary(diary = diary)
-        Spacer(modifier = Modifier.size(8.dp))
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxSize()
-                .background(color = Color.White, shape = RoundedCornerShape(4.dp))
-                .padding(16.dp)
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.End
         ) {
-            item {
+            Spacer(modifier = Modifier.size(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = diary.content ?: "",
-                    textAlign = TextAlign.Left,
+                    text = "Preview",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+                IconButton(
+                    onClick = {
+                        onBackPress()
+                    },
+                    modifier = Modifier
+                        .background(color = Color.White, shape = CircleShape)
+                        .size(30.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_cancel),
+                        contentDescription = null,
+                        tint = Primary
+                    )
+                }
             }
-            items(diary.photo.map { Uri.parse(it) }) {
-                it?.let {
-                    bitmap = if (Build.VERSION.SDK_INT < 28) {
-                        MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-                    } else {
-                        val source = ImageDecoder.createSource(context.contentResolver, it)
-                        ImageDecoder.decodeBitmap(source)
+            Spacer(modifier = Modifier.size(12.dp))
+            HeaderOverviewDiary(diary = diary)
+            Spacer(modifier = Modifier.size(8.dp))
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                item {
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = diary.content ?: "",
+                        textAlign = TextAlign.Left,
+                        color = Color.Black
+                    )
+                }
+                items(diary.photo.map { Uri.parse(it) }) {
+                    it?.let {
+                        bitmap = if (Build.VERSION.SDK_INT < 28) {
+                            MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                        } else {
+                            val source = ImageDecoder.createSource(context.contentResolver, it)
+                            ImageDecoder.decodeBitmap(source)
+                        }
                     }
+                    Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
                 }
-                Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
-            }
 
-        }
-        diary.contentSecond?.let {
-            Text(text = it, color = Color.Black)
-        }
-        Spacer(modifier = Modifier.size(12.dp))
-        if (isPreview) {
-            BottomOverviewDiary(onClickDelete = {
-                coroutineScope.launch(Dispatchers.IO) {
-                    overViewDiaryViewModel.deleteDiary(diary)
-                }
-                onClickDelete()
-            }, onEdit = { onEdit(diary) })
+            }
+            diary.contentSecond?.let {
+                Text(text = it, color = Color.Black)
+            }
+            Spacer(modifier = Modifier.size(12.dp))
+            if (isPreview) {
+                BottomOverviewDiary(onClickDelete = {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        overViewDiaryViewModel.deleteDiary(diary)
+                    }
+                    onClickDelete()
+                }, onEdit = { onEdit(diary) })
+            }
         }
     }
 }
@@ -149,21 +155,29 @@ fun HeaderOverviewDiary(diary: Diary) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Color.White, shape = RoundedCornerShape(4.dp))
             .padding(vertical = 8.dp, horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
-        Image(modifier = Modifier.size(40.dp),painter = painterResource(id = diary.mood), contentDescription = null)
+        Image(
+            modifier = Modifier.size(40.dp),
+            painter = painterResource(id = diary.mood),
+            contentDescription = null
+        )
         Column(
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 12.dp)
         ) {
-            Text(text = diary.title ?: "",color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = diary.title ?: "",
+                color = Color.Black,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.size(10.dp))
             DashLine(modifier = Modifier.padding(start = 16.dp), color = Color.Black)
             Spacer(modifier = Modifier.size(10.dp))
-            Text(text = diary.time?.formatLongToDate() ?: "",color = Color.Black)
+            Text(text = diary.time?.formatLongToDate() ?: "", color = Color.Black)
         }
     }
 }
