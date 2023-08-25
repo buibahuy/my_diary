@@ -119,18 +119,12 @@ fun NewDiaryUI(
 
     val bottomSheetStateBackground = rememberModalBottomSheetState()
 
-    val diaryState = newDiaryViewModel.diaryState
-
-    LaunchedEffect(newDiaryViewModel){
-        newDiaryViewModel.updateDiaryState(diary ?: Diary())
-    }
-
     var backgroundSelected by rememberSaveable {
         mutableIntStateOf(R.drawable.background_1)
     }
 
     var showModalSheet by rememberSaveable {
-        mutableStateOf(diaryState.mood == Mood.Default.icon)
+        mutableStateOf(diary?.mood == null)
     }
 
     val (title, onTitleChange) = rememberSaveable {
@@ -196,6 +190,7 @@ fun NewDiaryUI(
 
     Box(modifier = Modifier
         .fillMaxSize()
+        .background(Color.White)
         .clickable { focusManager.clearFocus() }) {
         Image(
             modifier = Modifier.fillMaxSize(),
@@ -212,7 +207,7 @@ fun NewDiaryUI(
                 mood = selectedMood,
                 time = time,
                 photo = imageUrisStateString,
-                background = 1,
+                background = backgroundSelected,
                 listTag = listTag.toList()
             )
             ToolBarDiary(
@@ -258,27 +253,71 @@ fun NewDiaryUI(
                 }
             )
 
-            Box(
+            LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 16.dp)
-            )
-            {
-                Image(
-                    modifier = Modifier.fillMaxSize(),
-                    painter = painterResource(R.drawable.background_content_default_theme),
-                    contentDescription = "background_image",
-                    contentScale = ContentScale.FillBounds
-                )
+            ) {
+                item {
+                    TextField(
+                        value = content ?: "",
+                        placeholder = {
+                            Text(text = "Enter content...", color = Color.Black)
+                        },
+                        onValueChange = onContentChange,
+                        colors = TextFieldDefaults.textFieldColors(
+                            backgroundColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                    )
+                }
+                items(imageUrisState) {
+                    it?.let {
+                        bitmap = if (Build.VERSION.SDK_INT < 28) {
+                            MediaStore.Images.Media.getBitmap(mContext.contentResolver, it)
+                        } else {
+                            val source = ImageDecoder.createSource(mContext.contentResolver, it)
+                            ImageDecoder.decodeBitmap(source)
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        IconButton(
+                            onClick = {
 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            },
+                            modifier = Modifier
+                                .background(color = Color.White, shape = CircleShape)
+                                .size(30.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_cancel),
+                                contentDescription = null,
+                                tint = Primary
+                            )
+                        }
+                        Image(
+                            bitmap = bitmap?.asImageBitmap()!!,
+                            contentDescription = null
+                        )
+                    }
+
+                }
+                if (imageUrisState.isNotEmpty()) {
                     item {
                         TextField(
-                            value = content ?: "",
+                            value = contentSecond ?: "",
                             placeholder = {
-                                Text(text = "Enter content...")
+                                Text(text = "Enter content...", color = Color.Black)
                             },
-                            onValueChange = onContentChange,
+                            onValueChange = onContentSecondChange,
                             colors = TextFieldDefaults.textFieldColors(
                                 backgroundColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
@@ -288,60 +327,7 @@ fun NewDiaryUI(
                             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                         )
                     }
-                    items(imageUrisState) {
-                        it?.let {
-                            bitmap = if (Build.VERSION.SDK_INT < 28) {
-                                MediaStore.Images.Media.getBitmap(mContext.contentResolver, it)
-                            } else {
-                                val source = ImageDecoder.createSource(mContext.contentResolver, it)
-                                ImageDecoder.decodeBitmap(source)
-                            }
-                        }
-                        Box(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.TopEnd
-                        ) {
-                            IconButton(
-                                onClick = {
-
-                                },
-                                modifier = Modifier
-                                    .background(color = Color.White, shape = CircleShape)
-                                    .size(30.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_cancel),
-                                    contentDescription = null,
-                                    tint = Primary
-                                )
-                            }
-                            Image(
-                                bitmap = bitmap?.asImageBitmap()!!,
-                                contentDescription = null
-                            )
-                        }
-
-                    }
-                    if (imageUrisState.isNotEmpty()) {
-                        item {
-                            TextField(
-                                value = contentSecond ?: "",
-                                placeholder = {
-                                    Text(text = "Enter content...")
-                                },
-                                onValueChange = onContentSecondChange,
-                                colors = TextFieldDefaults.textFieldColors(
-                                    backgroundColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent
-                                ),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
-                            )
-                        }
-                    }
+                }
 //                    item {
 //                        LazyRow(modifier = Modifier.fillMaxWidth()) {
 //                            itemsIndexed(listTag) { index : Int, tag: String ->
@@ -395,8 +381,8 @@ fun NewDiaryUI(
 //                            }
 //                        }
 //                    }
-                }
             }
+
 
             BottomDiary(onClickBottomDiary = { bottomDiaryItem ->
                 when (bottomDiaryItem) {
@@ -538,7 +524,7 @@ fun HeaderDiary(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp, horizontal = 12.dp)
-            .background(color = Color.White, shape = RoundedCornerShape(10.dp))
+//            .background(color = Color.White, shape = RoundedCornerShape(10.dp))
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
@@ -560,7 +546,7 @@ fun HeaderDiary(
                 ),
                 onValueChange = onTitleChange,
                 placeholder = {
-                    Text(text = "Title...")
+                    Text(text = "Title...", color = Color.Black)
                 },
                 colors = TextFieldDefaults.textFieldColors(
                     backgroundColor = Color.Transparent,
@@ -579,7 +565,7 @@ fun HeaderDiary(
                     .padding(start = 16.dp), horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = time)
+                Text(text = time, color = Color.Black)
                 Spacer(modifier = Modifier.size(4.dp))
                 Icon(
                     painter = painterResource(id = R.drawable.ic_calendar),
