@@ -55,6 +55,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -103,26 +104,28 @@ import java.util.Calendar
 @SuppressLint("SimpleDateFormat", "MutableCollectionMutableState")
 @Composable
 fun NewDiaryUI(
+    newDiaryViewModel: NewDiaryViewModel = hiltViewModel(),
     diary: Diary? = null,
     onClickBack: () -> Unit = {},
     onClickPreview: (Diary) -> Unit = {},
     onClickSave: () -> Unit = {},
     onClickMood: () -> Unit = {}
 ) {
+    Log.d("Tag1234","----$newDiaryViewModel")
     val coroutineScope = rememberCoroutineScope()
     val mCalendar = Calendar.getInstance()
     val mContext = LocalContext.current
-    val newDiaryViewModel: NewDiaryViewModel = hiltViewModel()
+//    val newDiaryViewModel: NewDiaryViewModel = hiltViewModel()
     val focusManager = LocalFocusManager.current
 
     val bottomSheetState = rememberModalBottomSheetState()
 
     val bottomSheetStateBackground = rememberModalBottomSheetState()
 
-    val diaryState = newDiaryViewModel.diaryState
+    val diaryState by newDiaryViewModel.diaryState.collectAsState()
 
-    LaunchedEffect(newDiaryViewModel){
-        newDiaryViewModel.updateDiaryState(diary ?: Diary())
+    LaunchedEffect(newDiaryViewModel) {
+        newDiaryViewModel.updateDiaryState(diary)
     }
 
     var backgroundSelected by rememberSaveable {
@@ -172,15 +175,16 @@ fun NewDiaryUI(
         rememberPermissionState(Manifest.permission.READ_EXTERNAL_STORAGE)
 
     var imageUrisState by rememberSaveable {
-        mutableStateOf<List<Uri?>>(imageUrisStateString.map { Uri.parse(it) })
+        mutableStateOf<List<Uri?>>(diaryState.photo.map { Uri.parse(it) })
     }
+
     var bitmap by remember {
         mutableStateOf<Bitmap?>(null)
     }
 
-    LaunchedEffect(imageUrisState) {
-        imageUrisStateString = imageUrisState.map { uri -> uri.toString() }
-        imageUrisState.forEach { uri ->
+    LaunchedEffect(diaryState.photo) {
+        //imageUrisStateString = imageUrisState.map { uri -> uri.toString() }
+        diaryState.photo.map { Uri.parse(it) }.forEach { uri ->
             if (uri != null)
                 mContext.contentResolver.takePersistableUriPermission(
                     uri,
@@ -190,8 +194,9 @@ fun NewDiaryUI(
     }
     val multiplePhotoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
-    ) {
-        imageUrisState += it
+    ) { listUri ->
+        //imageUrisState += listUri
+        newDiaryViewModel.updateListImagesDiary(listUri.map { it.toString() })
     }
 
     Box(modifier = Modifier
@@ -205,26 +210,26 @@ fun NewDiaryUI(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            val diary1 = Diary(
-                title = title,
-                content = content,
-                contentSecond = contentSecond,
-                mood = selectedMood,
-                time = time,
-                photo = imageUrisStateString,
-                background = 1,
-                listTag = listTag.toList()
-            )
+//            val diary1 = Diary(
+//                title = diaryState.title,
+//                content = diaryState.content,
+//                contentSecond = diaryState.contentSecond,
+//                mood = diaryState.mood,
+//                time = diaryState.time,
+//                photo = diaryState.photo,
+//                background = 1,
+//                listTag = listTag.toList()
+//            )
             ToolBarDiary(
                 onClickBack = onClickBack,
-                onClickPreview = { onClickPreview(diary1) },
+                onClickPreview = { onClickPreview(diaryState) },
                 onClickSave = {
 
                     coroutineScope.launch(Dispatchers.IO) {
                         if (diary == null)
-                            newDiaryViewModel.insertDiary(diary1)
+                            newDiaryViewModel.insertDiary(diaryState)
                         else {
-                            newDiaryViewModel.updateDiary(diary1.copy(id = diary.id))
+                            newDiaryViewModel.updateDiary(diaryState.copy(id = diary.id))
                         }
                     }
                     onClickSave()
@@ -236,10 +241,10 @@ fun NewDiaryUI(
             val mDay: Int = mCalendar.get(Calendar.DAY_OF_MONTH)
 
             HeaderDiary(
-                mood = selectedMood,
-                title = title ?: "",
-                time = mDate.value,
-                onTitleChange = onTitleChange,
+                mood = diaryState.mood,
+                title = diaryState.title ?: "",
+                time = diaryState.time.formatLongToDate(),
+                onTitleChange = newDiaryViewModel::updateTitle,
                 onClickMood = {
                     showModalSheet = true
                 },
@@ -249,9 +254,11 @@ fun NewDiaryUI(
                         { _: DatePicker, year: Int, month: Int, mDayOfMonth: Int ->
                             mCalendar.set(year, month, mDayOfMonth)
                             val long = mCalendar.time.time
-                            val dayOfWeek: String = mCalendar.time.time.formatLongToDate()
-                            mDate.value = dayOfWeek
-                            time = long
+//                            val dayOfWeek: String = mCalendar.time.time.formatLongToDate()
+//                            mDate.value = dayOfWeek
+//                            newDiaryViewModel.up
+//                            time = long
+                            newDiaryViewModel.updateTime(long)
                         }, mYear, mMonth, mDay
                     )
                     mDatePickerDialog.show()
@@ -274,11 +281,11 @@ fun NewDiaryUI(
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     item {
                         TextField(
-                            value = content ?: "",
+                            value = diaryState.content ?: "",
                             placeholder = {
                                 Text(text = "Enter content...")
                             },
-                            onValueChange = onContentChange,
+                            onValueChange = newDiaryViewModel::updateContent,
                             colors = TextFieldDefaults.textFieldColors(
                                 backgroundColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
@@ -288,7 +295,7 @@ fun NewDiaryUI(
                             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                         )
                     }
-                    items(imageUrisState) {
+                    items(diaryState.photo.map { Uri.parse(it) }) {
                         it?.let {
                             bitmap = if (Build.VERSION.SDK_INT < 28) {
                                 MediaStore.Images.Media.getBitmap(mContext.contentResolver, it)
@@ -324,14 +331,14 @@ fun NewDiaryUI(
                         }
 
                     }
-                    if (imageUrisState.isNotEmpty()) {
+                    if (diaryState.photo.map { Uri.parse(it) }.isNotEmpty()) {
                         item {
                             TextField(
-                                value = contentSecond ?: "",
+                                value = diaryState.contentSecond ?: "",
                                 placeholder = {
                                     Text(text = "Enter content...")
                                 },
-                                onValueChange = onContentSecondChange,
+                                onValueChange = newDiaryViewModel::updateContentSecond,
                                 colors = TextFieldDefaults.textFieldColors(
                                     backgroundColor = Color.Transparent,
                                     unfocusedIndicatorColor = Color.Transparent,
@@ -488,7 +495,7 @@ fun NewDiaryUI(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         content = {
                             items(listMood) { item: Mood ->
-                                val isSelected = selectedMood == item.icon
+                                val isSelected = diaryState.mood == item.icon
                                 val modifierSelected = if (isSelected) Modifier.border(
                                     width = if (isSelected) 2.dp else 0.dp,
                                     color = Primary,
@@ -496,10 +503,10 @@ fun NewDiaryUI(
                                 ) else Modifier
                                 ItemMoodBottomSheet(
                                     modifier = modifierSelected,
-                                    isSelected = item.icon == selectedMood,
+                                    isSelected = item.icon == diaryState.mood,
                                     mood = item,
                                     onClickMood = {
-                                        selectedMood = item.icon
+                                        newDiaryViewModel.updateMood(it)
                                     })
                             }
                         }

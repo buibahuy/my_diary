@@ -33,7 +33,7 @@ data class Diary(
 //    @ColumnInfo("textColor")
 //    var textColor: Color? = null,
     @ColumnInfo("tag")
-    var listTag: List<String>? = null
+    var listTag: List<String> = emptyList()
 )
 
 class Converters {

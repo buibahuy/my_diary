@@ -1,6 +1,7 @@
 package com.example.mydiary.nav
 
 import android.util.Log
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -10,6 +11,7 @@ import androidx.navigation.navigation
 import com.example.mydiary.bottombar.BottomBarItem
 import com.example.mydiary.database.Diary
 import com.example.mydiary.diary.newdiary.NewDiaryUI
+import com.example.mydiary.diary.newdiary.NewDiaryViewModel
 import com.example.mydiary.diary.overviewdiary.OverViewDiary
 import com.google.gson.Gson
 import okio.ByteString.Companion.encode
@@ -33,9 +35,7 @@ fun NavGraphBuilder.addDiaryNavGraph(navController: NavController) {
                 onClickBack = { navController.navigateUp() },
                 onClickSave = { navController.navigate(BottomBarItem.Home.route) },
                 onClickPreview = { diaryPreview->
-                    navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(diaryPreview,isPreview = false)){
-                        restoreState = true
-                    }
+                    navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(diaryPreview,isPreview = false))
                 }
             )
         }
