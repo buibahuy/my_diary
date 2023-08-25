@@ -33,7 +33,7 @@ fun NavGraphBuilder.addDiaryNavGraph(navController: NavController) {
                 onClickBack = { navController.navigateUp() },
                 onClickSave = { navController.navigate(BottomBarItem.Home.route) },
                 onClickPreview = { diaryPreview->
-                    navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(diaryPreview)){
+                    navController.navigate(NewDiary.OverViewDiary.navigateWithDiary(diaryPreview,isPreview = false)){
                         restoreState = true
                     }
                 }
@@ -43,14 +43,20 @@ fun NavGraphBuilder.addDiaryNavGraph(navController: NavController) {
             arguments = listOf(
                 navArgument("diary") {
                     type = NavType.StringType
+                },navArgument("isPreview") {
+                    type = NavType.BoolType
                 }
             )
         ) {
             val diaryJson = it.arguments!!.getString("diary")
             val diary = Gson().fromJson(diaryJson, Diary::class.java)
+
+            val isPreview = it.arguments!!.getBoolean("isPreview")
+
             Log.d("Tag1234","---$diary")
             OverViewDiary(
                 diary = diary,
+                isPreview = isPreview,
                 onBackPress = { navController.navigateUp() },
                 onEdit = { diaryNav ->
                     navController.navigate(NewDiary.AddDiary.navigateWithDiary(diaryNav))
@@ -73,12 +79,12 @@ sealed class NewDiary(
         }
     }
 
-    object OverViewDiary : NewDiary(route = "overview_diary/{diary}") {
-        fun navigateWithDiary(diary: Diary): String {
+    object OverViewDiary : NewDiary(route = "overview_diary/{diary}/{isPreview}") {
+        fun navigateWithDiary(diary: Diary, isPreview:Boolean): String {
             val gson = Gson()
             val json = gson.toJson(diary)
             val jsonencode = URLEncoder.encode(json, "utf-8")
-            return "overview_diary/$jsonencode"
+            return "overview_diary/$jsonencode/$isPreview"
         }
     }
 }

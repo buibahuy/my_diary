@@ -38,8 +38,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -66,28 +70,37 @@ fun OverViewDiary(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.End
     ) {
-        IconButton(
-            onClick = {
-                onBackPress()
-            },
-            modifier = Modifier
-                .background(color = Color.White, shape = CircleShape)
-                .size(30.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_cancel),
-                contentDescription = null,
-                tint = Primary
+        Spacer(modifier = Modifier.size(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                text = "Preview",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
             )
+            IconButton(
+                onClick = {
+                    onBackPress()
+                },
+                modifier = Modifier
+                    .background(color = Color.White, shape = CircleShape)
+                    .size(30.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_cancel),
+                    contentDescription = null,
+                    tint = Primary
+                )
+            }
         }
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(12.dp))
         HeaderOverviewDiary(diary = diary)
         Spacer(modifier = Modifier.size(8.dp))
-        Text(text = diary.content ?: "")
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
@@ -95,6 +108,14 @@ fun OverViewDiary(
                 .background(color = Color.White, shape = RoundedCornerShape(4.dp))
                 .padding(16.dp)
         ) {
+            item {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = diary.content ?: "",
+                    textAlign = TextAlign.Left,
+                    color = Color.Black
+                )
+            }
             items(diary.photo.map { Uri.parse(it) }) {
                 it?.let {
                     bitmap = if (Build.VERSION.SDK_INT < 28) {
@@ -109,9 +130,17 @@ fun OverViewDiary(
 
         }
         diary.contentSecond?.let {
-            Text(text = it)
+            Text(text = it, color = Color.Black)
         }
         Spacer(modifier = Modifier.size(12.dp))
+        if (isPreview) {
+            BottomOverviewDiary(onClickDelete = {
+                coroutineScope.launch(Dispatchers.IO) {
+                    overViewDiaryViewModel.deleteDiary(diary)
+                }
+                onClickDelete()
+            }, onEdit = { onEdit(diary) })
+        }
     }
 }
 
@@ -125,16 +154,16 @@ fun HeaderOverviewDiary(diary: Diary) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
-        Image(painter = painterResource(id = diary.mood), contentDescription = null)
+        Image(modifier = Modifier.size(40.dp),painter = painterResource(id = diary.mood), contentDescription = null)
         Column(
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 12.dp)
         ) {
-            Text(text = diary.title ?: "")
+            Text(text = diary.title ?: "",color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.size(10.dp))
             DashLine(modifier = Modifier.padding(start = 16.dp), color = Color.Black)
             Spacer(modifier = Modifier.size(10.dp))
-            Text(text = diary.time?.formatLongToDate() ?: "")
+            Text(text = diary.time?.formatLongToDate() ?: "",color = Color.Black)
         }
     }
 }
@@ -152,7 +181,7 @@ fun BottomOverviewDiary(
         Row(
             modifier = Modifier
                 .weight(1f)
-                .border(width = 2.dp, color = Color.Blue, shape = RoundedCornerShape(16.dp))
+                .border(width = 2.dp, color = Primary, shape = RoundedCornerShape(16.dp))
                 .background(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp)
@@ -160,29 +189,31 @@ fun BottomOverviewDiary(
                 .clickable {
                     onClickDelete()
                 }
-                .padding(vertical = 8.dp),
+                .padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             Icon(
                 modifier = Modifier.size(24.dp),
                 painter = painterResource(id = R.drawable.ic_delete),
-                contentDescription = null
+                contentDescription = null,
+                tint = Primary
             )
-            Text(text = "Delete")
+            Spacer(modifier = Modifier.size(4.dp))
+            Text(text = "Delete", color = Primary, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.size(8.dp))
         Row(
             modifier = Modifier
                 .weight(1f)
                 .background(
-                    color = Color.Blue,
+                    color = Primary,
                     shape = RoundedCornerShape(16.dp)
                 )
                 .clickable {
                     onEdit()
                 }
-                .padding(vertical = 8.dp),
+                .padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -191,7 +222,8 @@ fun BottomOverviewDiary(
                 painter = painterResource(id = R.drawable.ic_edit),
                 contentDescription = null
             )
-            Text(text = "Edit")
+            Spacer(modifier = Modifier.size(4.dp))
+            Text(text = "Edit", fontWeight = FontWeight.Bold)
         }
     }
 }

@@ -48,7 +48,8 @@ fun ItemMoodBottomSheet(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(id = mood.name),
             textAlign = TextAlign.Center,
-            fontSize = 12.sp
+            fontSize = 12.sp,
+            color = Color.Black
         )
     }
 }
