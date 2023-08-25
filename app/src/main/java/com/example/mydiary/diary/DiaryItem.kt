@@ -24,7 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
@@ -58,8 +60,8 @@ fun BottomDiaryItem(
             verticalArrangement = Arrangement.SpaceAround,
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = diary.title ?: "")
-            Text(text = diary.time?.formatLongToDate().toString())
+            Text(text = diary.title ?: "", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text(text = diary.time?.formatLongToDate().toString(), color = Color.Black, fontSize = 16.sp)
         }
         Box(modifier = Modifier) {
             Icon(

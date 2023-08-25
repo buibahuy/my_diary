@@ -17,6 +17,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +27,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,25 +34,29 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.ZeroCornerSize
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldColors
 import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.TextFieldDefaults.indicatorLine
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,18 +65,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -91,8 +96,6 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -116,12 +119,18 @@ fun NewDiaryUI(
 
     val bottomSheetStateBackground = rememberModalBottomSheetState()
 
+    val diaryState = newDiaryViewModel.diaryState
+
+    LaunchedEffect(newDiaryViewModel){
+        newDiaryViewModel.updateDiaryState(diary ?: Diary())
+    }
+
     var backgroundSelected by rememberSaveable {
         mutableIntStateOf(R.drawable.background_1)
     }
 
     var showModalSheet by rememberSaveable {
-        mutableStateOf(diary?.mood == null)
+        mutableStateOf(diaryState.mood == Mood.Default.icon)
     }
 
     val (title, onTitleChange) = rememberSaveable {
@@ -144,7 +153,7 @@ fun NewDiaryUI(
     }
 
     var listTag by rememberSaveable {
-        mutableStateOf(diary?.listTag?: listOf())
+        mutableStateOf(diary?.listTag ?: listOf())
     }
 
     val mDate = rememberSaveable {
@@ -288,7 +297,32 @@ fun NewDiaryUI(
                                 ImageDecoder.decodeBitmap(source)
                             }
                         }
-                        Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
+                        Box(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.TopEnd
+                        ) {
+                            IconButton(
+                                onClick = {
+
+                                },
+                                modifier = Modifier
+                                    .background(color = Color.White, shape = CircleShape)
+                                    .size(30.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_cancel),
+                                    contentDescription = null,
+                                    tint = Primary
+                                )
+                            }
+                            Image(
+                                bitmap = bitmap?.asImageBitmap()!!,
+                                contentDescription = null
+                            )
+                        }
+
                     }
                     if (imageUrisState.isNotEmpty()) {
                         item {
@@ -308,47 +342,59 @@ fun NewDiaryUI(
                             )
                         }
                     }
-                    item {
-                        LazyRow(modifier = Modifier.fillMaxWidth()) {
-                            itemsIndexed(listTag) { index : Int, tag: String ->
-                                val (tagChange, onTagChange) = remember {
-                                    mutableStateOf(tag)
-                                }
-                                TextField(
-                                    modifier = Modifier
-                                        .padding(horizontal = 4.dp)
-                                        .background(
-                                            color = Color.Black.copy(alpha = 0.5f),
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                        .widthIn(1.dp, Dp.Infinity),
-                                    value = tagChange,
-                                    trailingIcon = {
-                                        IconButton(
-                                            onClick = {
-                                                val mutableList = listTag.toMutableList()
-                                                mutableList.removeAt(index)
-                                                listTag = mutableList.toList()
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = "Clear"
-                                            )
-                                        }
-                                    },
-                                    onValueChange = onTagChange,
-                                    colors = TextFieldDefaults.textFieldColors(
-                                        backgroundColor = Color.Transparent,
-                                        unfocusedIndicatorColor = Color.Transparent,
-                                        focusedIndicatorColor = Color.Transparent
-                                    ),
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                                )
-                            }
-                        }
-                    }
+//                    item {
+//                        LazyRow(modifier = Modifier.fillMaxWidth()) {
+//                            itemsIndexed(listTag) { index : Int, tag: String ->
+//                                val (tagChange, onTagChange) = rememberSaveable {
+//                                    mutableStateOf(tag)
+//                                }
+//                                TextField(
+//                                    modifier = Modifier
+//                                        .padding(horizontal = 4.dp)
+//                                        .background(
+//                                            color = Color(0xFFD4E6FF),
+//                                            shape = RoundedCornerShape(8.dp)
+//                                        )
+//                                        .width(IntrinsicSize.Min),
+//                                    value = tagChange,
+//                                    trailingIcon = {
+//                                        IconButton(
+//                                            modifier = Modifier
+//                                                .background(
+//                                                    color = Color.White,
+//                                                    shape = CircleShape
+//                                                )
+//                                                .size(16.dp),
+//                                            onClick = {
+//                                                Log.d("TAG123","----$index---$tag")
+//                                                val mutableList = listTag.toMutableList()
+//                                                mutableList.removeAt(index)
+//                                                listTag = mutableList.toList()
+//                                            }
+//                                        ) {
+//                                            Icon(
+//                                                imageVector = Icons.Default.Clear,
+//                                                contentDescription = "Clear"
+//                                            )
+//                                        }
+//                                    },
+//                                    onValueChange = onTagChange,
+//                                    colors = TextFieldDefaults.textFieldColors(
+//                                        backgroundColor = Color.Transparent,
+//                                        unfocusedIndicatorColor = Color.Transparent,
+//                                        focusedIndicatorColor = Color.Transparent
+//                                    ),
+//                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+//                                    keyboardActions = KeyboardActions(onDone = {
+//                                        val mutableList = listTag.toMutableList()
+//                                        mutableList.add(tag)
+//                                        listTag = mutableList.toList()
+//                                        focusManager.clearFocus()
+//                                    }),
+//                                )
+//                            }
+//                        }
+//                    }
                 }
             }
 
@@ -375,7 +421,8 @@ fun NewDiaryUI(
                     }
 
                     BottomDiaryItem.Tag -> {
-                        listTag += ""
+//                        listTag += ""
+//                        Log.d("TAG1233","----$listTag--")
                     }
                 }
             })
@@ -507,6 +554,10 @@ fun HeaderDiary(
         ) {
             TextField(
                 value = title,
+                textStyle = TextStyle.Default.copy(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                ),
                 onValueChange = onTitleChange,
                 placeholder = {
                     Text(text = "Title...")
@@ -529,9 +580,11 @@ fun HeaderDiary(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = time)
+                Spacer(modifier = Modifier.size(4.dp))
                 Icon(
                     painter = painterResource(id = R.drawable.ic_calendar),
-                    contentDescription = null
+                    contentDescription = null,
+                    tint = Primary
                 )
             }
         }
@@ -579,3 +632,82 @@ fun BottomDiary(
         }
     }
 }
+
+@Composable
+fun TextFieldCustom(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    textStyle: TextStyle = androidx.compose.material.LocalTextStyle.current,
+    label: @Composable (() -> Unit)? = null,
+    placeholder: @Composable (() -> Unit)? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    isError: Boolean = false,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions(),
+    singleLine: Boolean = false,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    minLines: Int = 1,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    shape: Shape =
+        MaterialTheme.shapes.small.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize),
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+) {
+    // If color is not provided via the text style, use content color as a default
+    val textColor = textStyle.color.takeOrElse {
+        colors.textColor(enabled).value
+    }
+    val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
+
+    @OptIn(ExperimentalMaterialApi::class)
+    BasicTextField(
+        value = value,
+        modifier = Modifier
+            .background(colors.backgroundColor(enabled).value, shape)
+            .indicatorLine(enabled, isError, interactionSource, colors)
+            .then(modifier),
+        onValueChange = onValueChange,
+        enabled = enabled,
+        readOnly = readOnly,
+        textStyle = mergedTextStyle,
+        cursorBrush = SolidColor(colors.cursorColor(isError).value),
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        interactionSource = interactionSource,
+        singleLine = singleLine,
+        maxLines = maxLines,
+        minLines = minLines,
+        decorationBox = @Composable { innerTextField ->
+            // places leading icon, text field with label and placeholder, trailing icon
+            TextFieldDefaults.TextFieldDecorationBox(
+                value = value,
+                visualTransformation = visualTransformation,
+                innerTextField = innerTextField,
+                placeholder = placeholder,
+                label = label,
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon,
+                singleLine = singleLine,
+                enabled = enabled,
+                isError = isError,
+                interactionSource = interactionSource,
+                colors = colors,
+                contentPadding = TextFieldDefaults.textFieldWithoutLabelPadding(
+                    start = 4.dp,
+                    end = 4.dp,
+                    top = 2.dp,
+                    bottom = 2.dp
+                )
+            )
+        }
+    )
+}
+
+data class Tag(
+    val name: String
+)
