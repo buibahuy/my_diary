@@ -1,5 +1,6 @@
 package com.example.mydiary.diary.newdiary
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,6 +11,7 @@ import com.example.mydiary.database.Diary
 import com.example.mydiary.mood.Mood
 import com.example.mydiary.repository.DiaryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,7 +38,8 @@ class NewDiaryViewModel @Inject constructor(
     fun updateListImagesDiary(photos: List<String>) {
         viewModelScope.launch {
             diaryState.update {
-                it.copy(photo = photos)
+                val listPhoto = it.photo + photos
+                it.copy(photo = listPhoto)
             }
         }
     }
@@ -44,7 +47,7 @@ class NewDiaryViewModel @Inject constructor(
     fun removeListImagesDiary(index: Int) {
         viewModelScope.launch {
             diaryState.update {
-                val updateListImage = it.listTag?.toMutableList() ?: mutableListOf()
+                val updateListImage = it.photo.toMutableList() ?: mutableListOf()
                 updateListImage.removeAt(index = index)
                 it.copy(photo = updateListImage.distinct())
             }
@@ -54,12 +57,12 @@ class NewDiaryViewModel @Inject constructor(
     fun updateMood(mood: Mood) {
         viewModelScope.launch {
             diaryState.update {
-                it.copy(mood =mood.icon)
+                it.copy(mood = mood.icon)
             }
         }
     }
 
-    fun updateTime(time : Long){
+    fun updateTime(time: Long) {
         viewModelScope.launch {
             diaryState.update {
                 it.copy(time = time)
@@ -67,15 +70,15 @@ class NewDiaryViewModel @Inject constructor(
         }
     }
 
-    fun updateTitle(title : String){
+    fun updateTitle(title: String) {
         viewModelScope.launch {
             diaryState.update {
-               it.copy(title = title)
+                it.copy(title = title)
             }
         }
     }
 
-    fun updateContent(content : String){
+    fun updateContent(content: String) {
         viewModelScope.launch {
             diaryState.update {
                 it.copy(content = content)
@@ -83,10 +86,32 @@ class NewDiaryViewModel @Inject constructor(
         }
     }
 
-    fun updateContentSecond(contentSecond : String){
+    fun updateContentSecond(contentSecond: String) {
         viewModelScope.launch {
             diaryState.update {
                 it.copy(contentSecond = contentSecond)
+            }
+        }
+    }
+
+    fun updateTag(tag: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            diaryState.update {
+                val updateListTag = it.listTag.toMutableList()
+                updateListTag.add(tag)
+                Log.d("Tag1234","update--$updateListTag")
+                it.copy(listTag = updateListTag.toList())
+            }
+        }
+    }
+
+    fun removeTag(tagIndex: Int) {
+        viewModelScope.launch {
+            diaryState.update {
+                val updateListTag = it.listTag.toMutableList()
+                updateListTag.removeAt(tagIndex)
+                Log.d("Tag1234","remove--$updateListTag---$tagIndex")
+                it.copy(listTag = updateListTag.toList())
             }
         }
     }

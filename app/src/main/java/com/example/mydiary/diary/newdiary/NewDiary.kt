@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -66,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
@@ -111,7 +113,6 @@ fun NewDiaryUI(
     onClickSave: () -> Unit = {},
     onClickMood: () -> Unit = {}
 ) {
-    Log.d("Tag1234","----$newDiaryViewModel")
     val coroutineScope = rememberCoroutineScope()
     val mCalendar = Calendar.getInstance()
     val mContext = LocalContext.current
@@ -125,7 +126,8 @@ fun NewDiaryUI(
     val diaryState by newDiaryViewModel.diaryState.collectAsState()
 
     LaunchedEffect(newDiaryViewModel) {
-        newDiaryViewModel.updateDiaryState(diary)
+        if (diary != null)
+            newDiaryViewModel.updateDiaryState(diary)
     }
 
     var backgroundSelected by rememberSaveable {
@@ -133,7 +135,7 @@ fun NewDiaryUI(
     }
 
     var showModalSheet by rememberSaveable {
-        mutableStateOf(diaryState.mood == Mood.Default.icon)
+        mutableStateOf(diaryState.mood == null)
     }
 
     val (title, onTitleChange) = rememberSaveable {
@@ -199,9 +201,10 @@ fun NewDiaryUI(
         newDiaryViewModel.updateListImagesDiary(listUri.map { it.toString() })
     }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .clickable { focusManager.clearFocus() }) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
         Image(
             modifier = Modifier.fillMaxSize(),
             painter = painterResource(backgroundSelected),
@@ -241,7 +244,7 @@ fun NewDiaryUI(
             val mDay: Int = mCalendar.get(Calendar.DAY_OF_MONTH)
 
             HeaderDiary(
-                mood = diaryState.mood,
+                mood = diaryState.mood ?: Mood.Default.icon,
                 title = diaryState.title ?: "",
                 time = diaryState.time.formatLongToDate(),
                 onTitleChange = newDiaryViewModel::updateTitle,
@@ -295,12 +298,13 @@ fun NewDiaryUI(
                             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                         )
                     }
-                    items(diaryState.photo.map { Uri.parse(it) }) {
-                        it?.let {
+                    itemsIndexed(diaryState.photo.map { Uri.parse(it) }) { index: Int, uri: Uri ->
+                        uri.let {
                             bitmap = if (Build.VERSION.SDK_INT < 28) {
-                                MediaStore.Images.Media.getBitmap(mContext.contentResolver, it)
+                                MediaStore.Images.Media.getBitmap(mContext.contentResolver, uri)
                             } else {
-                                val source = ImageDecoder.createSource(mContext.contentResolver, it)
+                                val source =
+                                    ImageDecoder.createSource(mContext.contentResolver, uri)
                                 ImageDecoder.decodeBitmap(source)
                             }
                         }
@@ -310,9 +314,13 @@ fun NewDiaryUI(
                                 .clip(RoundedCornerShape(8.dp)),
                             contentAlignment = Alignment.TopEnd
                         ) {
+                            Image(
+                                bitmap = bitmap?.asImageBitmap()!!,
+                                contentDescription = null
+                            )
                             IconButton(
                                 onClick = {
-
+                                    newDiaryViewModel.removeListImagesDiary(index = index)
                                 },
                                 modifier = Modifier
                                     .background(color = Color.White, shape = CircleShape)
@@ -324,10 +332,6 @@ fun NewDiaryUI(
                                     tint = Primary
                                 )
                             }
-                            Image(
-                                bitmap = bitmap?.asImageBitmap()!!,
-                                contentDescription = null
-                            )
                         }
 
                     }
@@ -349,59 +353,68 @@ fun NewDiaryUI(
                             )
                         }
                     }
-//                    item {
-//                        LazyRow(modifier = Modifier.fillMaxWidth()) {
-//                            itemsIndexed(listTag) { index : Int, tag: String ->
-//                                val (tagChange, onTagChange) = rememberSaveable {
-//                                    mutableStateOf(tag)
-//                                }
-//                                TextField(
-//                                    modifier = Modifier
-//                                        .padding(horizontal = 4.dp)
-//                                        .background(
-//                                            color = Color(0xFFD4E6FF),
-//                                            shape = RoundedCornerShape(8.dp)
-//                                        )
-//                                        .width(IntrinsicSize.Min),
-//                                    value = tagChange,
-//                                    trailingIcon = {
-//                                        IconButton(
-//                                            modifier = Modifier
-//                                                .background(
-//                                                    color = Color.White,
-//                                                    shape = CircleShape
-//                                                )
-//                                                .size(16.dp),
-//                                            onClick = {
-//                                                Log.d("TAG123","----$index---$tag")
-//                                                val mutableList = listTag.toMutableList()
-//                                                mutableList.removeAt(index)
-//                                                listTag = mutableList.toList()
-//                                            }
-//                                        ) {
-//                                            Icon(
-//                                                imageVector = Icons.Default.Clear,
-//                                                contentDescription = "Clear"
-//                                            )
-//                                        }
-//                                    },
-//                                    onValueChange = onTagChange,
-//                                    colors = TextFieldDefaults.textFieldColors(
-//                                        backgroundColor = Color.Transparent,
-//                                        unfocusedIndicatorColor = Color.Transparent,
-//                                        focusedIndicatorColor = Color.Transparent
-//                                    ),
-//                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-//                                    keyboardActions = KeyboardActions(onDone = {
-//                                        val mutableList = listTag.toMutableList()
-//                                        mutableList.add(tag)
-//                                        listTag = mutableList.toList()
-//                                        focusManager.clearFocus()
-//                                    }),
-//                                )
-//                            }
-//                        }
-//                    }
+                    item {
+                        LazyColumn(modifier = Modifier.height(300.dp)) {
+                            itemsIndexed(diaryState.listTag) { index: Int, tag: String ->
+                                Log.d("Tag123456", "-----$index---$tag")
+                                val (tagChange, onTagChange) = remember {
+                                    mutableStateOf(tag)
+                                }
+                                TextField(
+                                    modifier = Modifier
+                                        .padding(horizontal = 4.dp)
+                                        .background(
+                                            color = Color(0xFFD4E6FF),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .width(IntrinsicSize.Min)
+                                        .onFocusChanged {
+                                            if (it.hasFocus) {
+                                                Log.d("Tag12345", "-----hasFocus")
+                                            } else if (it.isFocused) {
+                                                Log.d("Tag12345", "-----isFocused")
+                                            } else if (it.isCaptured) {
+                                                Log.d("Tag12345", "-----isCaptured")
+                                            }
+                                        },
+                                    value = tagChange,
+                                    trailingIcon = {
+                                        IconButton(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = Color.White,
+                                                    shape = CircleShape
+                                                )
+                                                .size(16.dp),
+                                            onClick = {
+                                                newDiaryViewModel.removeTag(index)
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Clear"
+                                            )
+                                        }
+                                    },
+                                    onValueChange = onTagChange,
+                                    colors = TextFieldDefaults.textFieldColors(
+                                        backgroundColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent
+                                    ),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = {
+                                        if (tagChange.isBlank()){
+                                            newDiaryViewModel.removeTag(index)
+                                        } else {
+                                            newDiaryViewModel.updateTag(tagChange)
+                                        }
+                                        focusManager.clearFocus()
+                                    }),
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -428,8 +441,7 @@ fun NewDiaryUI(
                     }
 
                     BottomDiaryItem.Tag -> {
-//                        listTag += ""
-//                        Log.d("TAG1233","----$listTag--")
+                        newDiaryViewModel.updateTag("")
                     }
                 }
             })

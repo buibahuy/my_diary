@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
+import com.example.mydiary.mood.Mood
 import com.example.mydiary.ui.theme.Primary
 
 @SuppressLint("ResourceType")
@@ -52,7 +53,7 @@ fun BottomDiaryItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Image(painter = painterResource(id = diary.mood), contentDescription = null)
+        Image(painter = painterResource(id = diary.mood ?: Mood.Default.icon), contentDescription = null)
         Column(
             modifier = Modifier
                 .weight(1f)

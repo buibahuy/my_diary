@@ -19,7 +19,7 @@ data class Diary(
     @ColumnInfo("content_second")
     var contentSecond: String? = null,
     @ColumnInfo("mood")
-    var mood: Int = Mood.Default.icon,
+    var mood: Int? = null,
     @ColumnInfo("time")
     var time: Long? = null,
     @ColumnInfo("background")

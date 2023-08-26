@@ -50,6 +50,7 @@ import coil.compose.AsyncImage
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
+import com.example.mydiary.mood.Mood
 import com.example.mydiary.ui.theme.Primary
 import com.example.mydiary.util.DashLine
 import kotlinx.coroutines.Dispatchers
@@ -154,7 +155,7 @@ fun HeaderOverviewDiary(diary: Diary) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
-        Image(modifier = Modifier.size(40.dp),painter = painterResource(id = diary.mood), contentDescription = null)
+        Image(modifier = Modifier.size(40.dp),painter = painterResource(id = diary.mood ?: Mood.Default.icon), contentDescription = null)
         Column(
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 12.dp)
