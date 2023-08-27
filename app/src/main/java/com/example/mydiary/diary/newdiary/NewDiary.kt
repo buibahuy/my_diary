@@ -75,6 +75,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
@@ -85,12 +86,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
+import com.example.mydiary.database.DiaryElement
 import com.example.mydiary.datetime.formatLongToDate
 import com.example.mydiary.diary.BottomDiaryItem
 import com.example.mydiary.diary.ToolBarDiary
 import com.example.mydiary.mood.ItemMoodBottomSheet
 import com.example.mydiary.mood.Mood
 import com.example.mydiary.ui.theme.Primary
+import com.example.mydiary.ui.theme.WindSongFont
 import com.example.mydiary.util.DashLine
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -118,6 +121,7 @@ fun NewDiaryUI(
     val bottomSheetState = rememberModalBottomSheetState()
 
     val bottomSheetStateBackground = rememberModalBottomSheetState()
+    val bottomSheetStateTextFont = rememberModalBottomSheetState()
 
     var backgroundSelected by rememberSaveable {
         mutableIntStateOf(R.drawable.background_1)
@@ -168,8 +172,20 @@ fun NewDiaryUI(
     var imageUrisState by rememberSaveable {
         mutableStateOf<List<Uri?>>(imageUrisStateString.map { Uri.parse(it) })
     }
+
     var bitmap by remember {
         mutableStateOf<Bitmap?>(null)
+    }
+
+    var diaryElementState by remember {
+        mutableStateOf(
+            if (diary != null) diary.diaryElement else DiaryElement(
+                fontSize = 16.sp,
+                textAlign = TextAlign.Start,
+                fontFamily = WindSongFont,
+                textColor = Color.Black
+            )
+        )
     }
 
     LaunchedEffect(imageUrisState) {
@@ -235,6 +251,8 @@ fun NewDiaryUI(
                 title = title ?: "",
                 time = mDate.value,
                 onTitleChange = onTitleChange,
+                fontFamily = diaryElementState?.fontFamily ?: WindSongFont,
+                textColor = diaryElementState?.textColor ?: Color.Black,
                 onClickMood = {
                     showModalSheet = true
                 },
@@ -316,9 +334,14 @@ fun NewDiaryUI(
                             value = contentSecond ?: "",
                             placeholder = {
                                 Text(text = "Enter content...", color = Color.Black)
-                            },
+                            }, textStyle = TextStyle.Default.copy(
+                                fontSize = diaryElementState?.fontSize ?: 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = diaryElementState?.fontFamily ?: WindSongFont
+                            ),
                             onValueChange = onContentSecondChange,
                             colors = TextFieldDefaults.textFieldColors(
+                                textColor = diaryElementState?.textColor ?: Color.Black,
                                 backgroundColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
                                 focusedIndicatorColor = Color.Transparent
@@ -393,7 +416,9 @@ fun NewDiaryUI(
                     }
 
                     BottomDiaryItem.TextFont -> {
-
+                        coroutineScope.launch {
+                            bottomSheetStateTextFont.show()
+                        }
                     }
 
                     BottomDiaryItem.Image -> {
@@ -420,6 +445,29 @@ fun NewDiaryUI(
                         backgroundSelected = it
                     },
                     bottomSheetState = bottomSheetStateBackground,
+                    scope = coroutineScope
+                )
+            }
+
+            if (bottomSheetStateTextFont.isVisible) {
+                BottomSheetTextFont(
+                    fontSizeSelected = diaryElementState?.fontSize ?: 16.sp,
+                    positionSelected = diaryElementState?.textAlign ?: TextAlign.Start,
+                    colorSelected = diaryElementState?.textColor ?: Color.Black,
+                    fontSelected = diaryElementState?.fontFamily ?: WindSongFont,
+                    onFontSizeChange = {
+                        diaryElementState?.fontSize = it
+                    },
+                    onPositionChange = {
+                        diaryElementState?.textAlign = it
+                    },
+                    onColorChange = {
+                        diaryElementState?.textColor = it
+                    },
+                    onFontChange = {
+                        diaryElementState?.fontFamily = it
+                    },
+                    bottomSheetState = bottomSheetStateTextFont,
                     scope = coroutineScope
                 )
             }
@@ -517,6 +565,8 @@ fun HeaderDiary(
     onTitleChange: (String) -> Unit,
     mood: Int,
     time: String,
+    fontFamily: FontFamily,
+    textColor: Color,
     onClickMood: () -> Unit,
     onClickTime: () -> Unit
 ) {
@@ -542,13 +592,15 @@ fun HeaderDiary(
                 value = title,
                 textStyle = TextStyle.Default.copy(
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = fontFamily
                 ),
                 onValueChange = onTitleChange,
                 placeholder = {
                     Text(text = "Title...", color = Color.Black)
                 },
                 colors = TextFieldDefaults.textFieldColors(
+                    textColor = textColor,
                     backgroundColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent
@@ -565,7 +617,7 @@ fun HeaderDiary(
                     .padding(start = 16.dp), horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = time, color = Color.Black)
+                Text(text = time, color = textColor)
                 Spacer(modifier = Modifier.size(4.dp))
                 Icon(
                     painter = painterResource(id = R.drawable.ic_calendar),
