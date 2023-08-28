@@ -7,4 +7,44 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="black100">#07080B</color>
+    <color name="black50">#727986</color>
+    <color name="black10">#B2B5BC</color>
+
+    <color name="purple100">#A74499</color>
+    <color name="purple50">#B968AD</color>
+    <color name="purple10">#D5A5CF</color>
+
+    <color name="red100">#ED1A24</color>
+    <color name="red50">#F14850</color>
+    <color name="red10">#F79397</color>
+
+    <color name="pink100">#E54097</color>
+    <color name="pink50">#EA66AD</color>
+    <color name="pink10">#F3A3CD</color>
+
+    <color name="orange100">#F3701F</color>
+    <color name="orange50">#F58D4C</color>
+    <color name="orange10">#F9BB95</color>
+
+    <color name="yellow100">#EFE511</color>
+    <color name="yellow50">#FFF532</color>
+    <color name="yellow10">#FFF985</color>
+
+    <color name="green100">#8DFD06</color>
+    <color name="green50">#A5FD38</color>
+    <color name="green10">#C9FF89</color>
+
+    <color name="green90">#00A98F</color>
+    <color name="green60">#33B9A5</color>
+    <color name="green30">#85D5C9</color>
+
+    <color name="blue100">#0093CF</color>
+    <color name="blue50">#32A9D9</color>
+    <color name="blue10">#85CBE9</color>
+
+    <color name="darkblue100">#0054A5</color>
+    <color name="darkblue50">#3476B7</color>
+    <color name="darkblue10">#85ADD3</color>
 </resources>

@@ -27,12 +27,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
 import com.example.mydiary.ui.theme.Primary
+import com.example.mydiary.util.FontConverter
 
 @SuppressLint("ResourceType")
 @Composable
@@ -79,14 +81,17 @@ fun BottomDiaryItem(
             }
             Text(
                 text = annotatedString,
-                color = Color.Black,
+                color = diary.diaryElement?.textColor ?: Color.Black,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily)
             )
             Text(
                 text = diary.time?.formatLongToDate().toString(),
-                color = Color.Black,
-                fontSize = 16.sp
+                color = diary.diaryElement?.textColor ?: Color.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily)
             )
         }
         Box(modifier = Modifier) {

@@ -55,11 +55,13 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,23 +77,30 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
+import com.example.mydiary.database.DiaryElement
 import com.example.mydiary.datetime.formatLongToDate
 import com.example.mydiary.diary.BottomDiaryItem
 import com.example.mydiary.diary.ToolBarDiary
 import com.example.mydiary.mood.ItemMoodBottomSheet
 import com.example.mydiary.mood.Mood
+import com.example.mydiary.ui.theme.Colorblack100
 import com.example.mydiary.ui.theme.Primary
+import com.example.mydiary.ui.theme.WindSongFont
 import com.example.mydiary.util.DashLine
+import com.example.mydiary.util.FontConverter
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -118,6 +127,7 @@ fun NewDiaryUI(
     val bottomSheetState = rememberModalBottomSheetState()
 
     val bottomSheetStateBackground = rememberModalBottomSheetState()
+    val bottomSheetStateTextFont = rememberModalBottomSheetState()
 
     var backgroundSelected by rememberSaveable {
         mutableIntStateOf(R.drawable.background_1)
@@ -168,8 +178,20 @@ fun NewDiaryUI(
     var imageUrisState by rememberSaveable {
         mutableStateOf<List<Uri?>>(imageUrisStateString.map { Uri.parse(it) })
     }
+
     var bitmap by remember {
         mutableStateOf<Bitmap?>(null)
+    }
+
+    val diaryElementState by remember {
+        mutableStateOf(
+            if (diary != null) diary.diaryElement else DiaryElement(
+                fontSize = 16.sp,
+                textAlign = TextAlign.Start,
+                fontFamily = FontConverter.setToDatabase(WindSongFont),
+                textColor = Color.Black
+            )
+        )
     }
 
     LaunchedEffect(imageUrisState) {
@@ -208,6 +230,7 @@ fun NewDiaryUI(
                 time = time,
                 photo = imageUrisStateString,
                 background = backgroundSelected,
+                diaryElement = diaryElementState,
                 listTag = listTag.toList()
             )
             ToolBarDiary(
@@ -235,6 +258,10 @@ fun NewDiaryUI(
                 title = title ?: "",
                 time = mDate.value,
                 onTitleChange = onTitleChange,
+                fontFamily = FontConverter.getFromDatabase(diaryElementState?.fontFamily),
+                textAlign = diaryElementState?.textAlign ?: TextAlign.Start,
+                textColor = diaryElementState?.textColor ?: Color.Black,
+                fontSize = diaryElementState?.fontSize ?: 16.sp,
                 onClickMood = {
                     showModalSheet = true
                 },
@@ -256,16 +283,29 @@ fun NewDiaryUI(
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
+                    .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
                 item {
                     TextField(
+                        modifier = Modifier.fillMaxWidth(),
                         value = content ?: "",
                         placeholder = {
-                            Text(text = "Enter content...", color = Color.Black)
-                        },
+                            Text(
+                                text = "Enter content...",
+                                color = diaryElementState?.textColor ?: Color.Black,
+                                fontFamily = FontConverter.getFromDatabase(diaryElementState?.fontFamily),
+                                fontSize = diaryElementState?.fontSize ?: TextUnit.Unspecified
+                            )
+                        }, textStyle = TextStyle.Default.copy(
+                            fontSize = diaryElementState?.fontSize ?: TextUnit.Unspecified,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontConverter.getFromDatabase(diaryElementState?.fontFamily),
+                            textAlign = diaryElementState?.textAlign ?: TextAlign.Start
+                        ),
                         onValueChange = onContentChange,
                         colors = TextFieldDefaults.textFieldColors(
+                            textColor = diaryElementState?.textColor ?: Color.Black,
                             backgroundColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent
@@ -274,8 +314,11 @@ fun NewDiaryUI(
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
                 }
-                items(imageUrisState) {
-                    it?.let {
+                itemsIndexed(imageUrisState, key = { index, uri ->
+                    imageUrisState.indexOf(uri)
+                }
+                ) { index, uri ->
+                    uri?.let {
                         bitmap = if (Build.VERSION.SDK_INT < 28) {
                             MediaStore.Images.Media.getBitmap(mContext.contentResolver, it)
                         } else {
@@ -303,22 +346,28 @@ fun NewDiaryUI(
                                 tint = Primary
                             )
                         }
-                        Image(
-                            bitmap = bitmap?.asImageBitmap()!!,
-                            contentDescription = null
-                        )
+                        Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
                     }
-
                 }
                 if (imageUrisState.isNotEmpty()) {
                     item {
                         TextField(
                             value = contentSecond ?: "",
                             placeholder = {
-                                Text(text = "Enter content...", color = Color.Black)
-                            },
+                                Text(
+                                    text = "Enter content...",
+                                    color = diaryElementState?.textColor ?: Color.Black,
+                                    fontFamily = FontConverter.getFromDatabase(diaryElementState?.fontFamily)
+                                )
+                            }, textStyle = TextStyle.Default.copy(
+                                fontSize = diaryElementState?.fontSize ?: TextUnit.Unspecified,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontConverter.getFromDatabase(diaryElementState?.fontFamily),
+                                textAlign = diaryElementState?.textAlign ?: TextAlign.Start
+                            ),
                             onValueChange = onContentSecondChange,
                             colors = TextFieldDefaults.textFieldColors(
+                                textColor = diaryElementState?.textColor ?: Color.Black,
                                 backgroundColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
                                 focusedIndicatorColor = Color.Transparent
@@ -393,7 +442,9 @@ fun NewDiaryUI(
                     }
 
                     BottomDiaryItem.TextFont -> {
-
+                        coroutineScope.launch {
+                            bottomSheetStateTextFont.show()
+                        }
                     }
 
                     BottomDiaryItem.Image -> {
@@ -420,6 +471,29 @@ fun NewDiaryUI(
                         backgroundSelected = it
                     },
                     bottomSheetState = bottomSheetStateBackground,
+                    scope = coroutineScope
+                )
+            }
+
+            if (bottomSheetStateTextFont.isVisible) {
+                BottomSheetTextFont(
+                    fontSizeSelected = diaryElementState?.fontSize ?: 16.sp,
+                    positionSelected = diaryElementState?.textAlign ?: TextAlign.Start,
+                    colorSelected = diaryElementState?.textColor ?: Colorblack100,
+                    fontSelected = WindSongFont,
+                    onFontSizeChange = {
+                        diaryElementState?.fontSize = it
+                    },
+                    onPositionChange = {
+                        diaryElementState?.textAlign = it
+                    },
+                    onColorChange = {
+                        diaryElementState?.textColor = it
+                    },
+                    onFontChange = {
+                        diaryElementState?.fontFamily = FontConverter.setToDatabase(it)
+                    },
+                    bottomSheetState = bottomSheetStateTextFont,
                     scope = coroutineScope
                 )
             }
@@ -517,6 +591,10 @@ fun HeaderDiary(
     onTitleChange: (String) -> Unit,
     mood: Int,
     time: String,
+    fontFamily: FontFamily,
+    textAlign: TextAlign,
+    textColor: Color,
+    fontSize: TextUnit,
     onClickMood: () -> Unit,
     onClickTime: () -> Unit
 ) {
@@ -541,14 +619,22 @@ fun HeaderDiary(
             TextField(
                 value = title,
                 textStyle = TextStyle.Default.copy(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = fontFamily,
+                    textAlign = textAlign
                 ),
                 onValueChange = onTitleChange,
                 placeholder = {
-                    Text(text = "Title...", color = Color.Black)
+                    Text(
+                        text = "Title...",
+                        color = Color.Black,
+                        fontFamily = fontFamily,
+                        fontSize = fontSize
+                    )
                 },
                 colors = TextFieldDefaults.textFieldColors(
+                    textColor = textColor,
                     backgroundColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent
@@ -559,13 +645,21 @@ fun HeaderDiary(
             Spacer(modifier = Modifier.size(10.dp))
             Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clickable {
                         onClickTime()
                     }
                     .padding(start = 16.dp), horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = time, color = Color.Black)
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = time,
+                    color = textColor,
+                    fontFamily = fontFamily,
+                    fontSize = fontSize,
+                    textAlign = textAlign
+                )
                 Spacer(modifier = Modifier.size(4.dp))
                 Icon(
                     painter = painterResource(id = R.drawable.ic_calendar),

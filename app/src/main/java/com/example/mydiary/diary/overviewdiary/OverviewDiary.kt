@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +49,7 @@ import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
 import com.example.mydiary.ui.theme.Primary
 import com.example.mydiary.util.DashLine
+import com.example.mydiary.util.FontConverter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -110,15 +112,16 @@ fun OverViewDiary(
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxSize()
                     .padding(16.dp)
             ) {
                 item {
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         text = diary.content ?: "",
-                        textAlign = TextAlign.Left,
-                        color = Color.Black
+                        textAlign = diary.diaryElement?.textAlign,
+                        color = diary.diaryElement?.textColor ?: Color.Black,
+                        fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                        fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily)
                     )
                 }
                 items(diary.photo.map { Uri.parse(it) }) {
@@ -135,7 +138,13 @@ fun OverViewDiary(
 
             }
             diary.contentSecond?.let {
-                Text(text = it, color = Color.Black)
+                Text(
+                    text = it,
+                    color =diary.diaryElement?.textColor ?: Color.Black,
+                    fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily),
+                    fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                    textAlign = diary.diaryElement?.textAlign
+                )
             }
             Spacer(modifier = Modifier.size(12.dp))
             if (isPreview) {
@@ -169,15 +178,25 @@ fun HeaderOverviewDiary(diary: Diary) {
                 .padding(horizontal = 8.dp, vertical = 12.dp)
         ) {
             Text(
+                modifier = Modifier.fillMaxWidth(),
                 text = diary.title ?: "",
-                color = Color.Black,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                color = diary.diaryElement?.textColor ?: Color.Black,
+                fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily),
+                textAlign = diary.diaryElement?.textAlign
             )
             Spacer(modifier = Modifier.size(10.dp))
             DashLine(modifier = Modifier.padding(start = 16.dp), color = Color.Black)
             Spacer(modifier = Modifier.size(10.dp))
-            Text(text = diary.time?.formatLongToDate() ?: "", color = Color.Black)
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = diary.time?.formatLongToDate() ?: "",
+                color = diary.diaryElement?.textColor ?: Color.Black,
+                fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily),
+                textAlign = diary.diaryElement?.textAlign
+            )
         }
     }
 }

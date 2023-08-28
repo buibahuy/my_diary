@@ -1,6 +1,10 @@
 package com.example.mydiary.database
 
+import androidx.compose.ui.text.font.FontFamily
 import android.net.Uri
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -28,8 +32,8 @@ data class Diary(
     var photo: List<String> = emptyList(),
 //    @ColumnInfo("fontSize")
 //    var fontSize: TextUnit? = TextUnit.Unspecified,
-//    @ColumnInfo("textAlign")
-//    var textAlign: String? = TextAlign.Start.toString(),
+    @ColumnInfo("diaryElement")
+    var diaryElement: DiaryElement? = null,
 //    @ColumnInfo("textColor")
 //    var textColor: Color? = null,
     @ColumnInfo("tag")
@@ -46,6 +50,13 @@ data class Diary(
     }
 }
 
+class DiaryElement(
+    var textAlign: TextAlign,
+    var fontFamily: String,
+    var fontSize: TextUnit,
+    var textColor: Color,
+)
+
 class Converters {
 
     @TypeConverter
@@ -53,4 +64,10 @@ class Converters {
 
     @TypeConverter
     fun jsonToList(value: String) = Gson().fromJson(value, Array<String>::class.java).toList()
+
+    @TypeConverter
+    fun textAlignToJson(value: DiaryElement?) = Gson().toJson(value)
+
+    @TypeConverter
+    fun jsonToTextAlign(value: String?) = Gson().fromJson(value, DiaryElement::class.java)
 }
