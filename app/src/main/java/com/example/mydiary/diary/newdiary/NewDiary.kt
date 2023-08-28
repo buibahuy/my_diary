@@ -179,10 +179,6 @@ fun NewDiaryUI(
         mutableStateOf<List<Uri?>>(imageUrisStateString.map { Uri.parse(it) })
     }
 
-    var bitmap by remember {
-        mutableStateOf<Bitmap?>(null)
-    }
-
     val diaryElementState by remember {
         mutableStateOf(
             if (diary != null) diary.diaryElement else DiaryElement(
@@ -314,18 +310,7 @@ fun NewDiaryUI(
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
                 }
-                itemsIndexed(imageUrisState, key = { index, uri ->
-                    imageUrisState.indexOf(uri)
-                }
-                ) { index, uri ->
-                    uri?.let {
-                        bitmap = if (Build.VERSION.SDK_INT < 28) {
-                            MediaStore.Images.Media.getBitmap(mContext.contentResolver, it)
-                        } else {
-                            val source = ImageDecoder.createSource(mContext.contentResolver, it)
-                            ImageDecoder.decodeBitmap(source)
-                        }
-                    }
+                items(imageUrisState) {
                     Box(
                         modifier = Modifier
                             .padding(8.dp)
@@ -346,7 +331,7 @@ fun NewDiaryUI(
                                 tint = Primary
                             )
                         }
-                        Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
+                        AsyncImage(model = it, contentDescription = null)
                     }
                 }
                 if (imageUrisState.isNotEmpty()) {
