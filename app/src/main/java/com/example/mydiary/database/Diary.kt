@@ -34,7 +34,17 @@ data class Diary(
 //    var textColor: Color? = null,
     @ColumnInfo("tag")
     var listTag: List<String>? = null
-)
+){
+    fun doesMatchQuery(query : String) : Boolean {
+        val match = listOf(
+            title,
+            content
+        )
+        return match.any {
+            it?.contains(query, ignoreCase = true) ?: false
+        }
+    }
+}
 
 class Converters {
 

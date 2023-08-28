@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +38,7 @@ import com.example.mydiary.ui.theme.Primary
 @Composable
 fun BottomDiaryItem(
     diary: Diary,
+    keyword: String,
     onClickDiaryItem: (Diary) -> Unit,
     onClickDelete: () -> Unit,
     onClickEdit: (Diary) -> Unit,
@@ -60,8 +63,31 @@ fun BottomDiaryItem(
             verticalArrangement = Arrangement.SpaceAround,
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = diary.title ?: "", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text(text = diary.time?.formatLongToDate().toString(), color = Color.Black, fontSize = 16.sp)
+            val annotatedString = buildAnnotatedString {
+                val str = diary.title
+                val boldStr = keyword
+                val startIndex = str?.indexOf(boldStr)
+                val endIndex = startIndex?.plus(boldStr.length)
+                append(str)
+                if (startIndex != null && endIndex != null) {
+                    addStyle(
+                        style = SpanStyle(color = Color.Red),
+                        start = startIndex,
+                        end = endIndex
+                    )
+                }
+            }
+            Text(
+                text = annotatedString,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+            Text(
+                text = diary.time?.formatLongToDate().toString(),
+                color = Color.Black,
+                fontSize = 16.sp
+            )
         }
         Box(modifier = Modifier) {
             Icon(
