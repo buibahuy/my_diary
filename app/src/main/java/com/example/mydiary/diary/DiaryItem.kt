@@ -25,12 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
 import com.example.mydiary.ui.theme.Primary
+import com.example.mydiary.util.FontConverter
 
 @SuppressLint("ResourceType")
 @Composable
@@ -60,8 +62,19 @@ fun BottomDiaryItem(
             verticalArrangement = Arrangement.SpaceAround,
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = diary.title ?: "", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text(text = diary.time?.formatLongToDate().toString(), color = Color.Black, fontSize = 16.sp)
+            Text(
+                text = diary.title ?: "",
+                color = diary.diaryElement?.textColor ?: Color.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily)
+            )
+            Text(text = diary.time?.formatLongToDate().toString(),
+                color = diary.diaryElement?.textColor ?: Color.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
+                fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily)
+            )
         }
         Box(modifier = Modifier) {
             Icon(

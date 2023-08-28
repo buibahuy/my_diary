@@ -1,6 +1,7 @@
 package com.example.mydiary.diary.newdiary
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -104,6 +108,23 @@ fun BottomSheetTextFont(
         Alison,
         Vibur
     )
+
+    var fontSizeSelectedSate by remember {
+        mutableStateOf(fontSizeSelected)
+    }
+
+    var positionSelectedSate by remember {
+        mutableStateOf(positionSelected)
+    }
+
+    var colorSelectedSate by remember {
+        mutableStateOf(colorSelected)
+    }
+
+    var fontSelectedSate by remember {
+        mutableStateOf(fontSelected)
+    }
+
     ModalBottomSheet(
         modifier = Modifier
             .padding(bottom = 56.dp)
@@ -147,9 +168,11 @@ fun BottomSheetTextFont(
                                 .size(16.dp)
                                 .clickable {
                                     onFontSizeChange(it.value as TextUnit)
+                                    fontSizeSelectedSate = it.value
                                 },
                             painter = painterResource(id = it.icon),
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = if (fontSizeSelectedSate == it.value) Primary else Color.Gray
                         )
                     }
                 }
@@ -168,9 +191,11 @@ fun BottomSheetTextFont(
                                 .size(16.dp)
                                 .clickable {
                                     onPositionChange(it.value as TextAlign)
+                                    positionSelectedSate = it.value
                                 },
                             painter = painterResource(id = it.icon),
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = if (positionSelectedSate == it.value) Primary else Color.Gray
                         )
                     }
                 }
@@ -178,15 +203,25 @@ fun BottomSheetTextFont(
             Spacer(modifier = Modifier.size(16.dp))
             LazyRow(modifier = Modifier) {
                 items(listColor) {
+                    val isSelected = colorSelectedSate == it
+                    val modifierSelected = if (isSelected) Modifier.border(
+                        width = if (isSelected) 2.dp else 0.dp,
+                        color = Primary,
+                        shape = CircleShape
+                    ) else Modifier
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
+                            .then(modifierSelected)
                             .clip(CircleShape)
                             .size(40.dp)
                             .background(color = it)
                             .clickable {
                                 onColorChange(it)
+                                colorSelectedSate = it
                             }
+                            .padding(horizontal = 8.dp)
+
                     )
                 }
             }
@@ -199,8 +234,14 @@ fun BottomSheetTextFont(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 content = {
                     items(listFont) {
+                        val isSelected = fontSelectedSate == it
+                        val modifierSelected = if (isSelected) Modifier.border(
+                            width = if (isSelected) 2.dp else 0.dp,
+                            color = Primary,
+                            shape = RoundedCornerShape(4.dp)
+                        ) else Modifier
                         Text(
-                            modifier = Modifier
+                            modifier = modifierSelected
                                 .background(
                                     color = Color.Green,
                                     shape = RoundedCornerShape(4.dp)
@@ -208,6 +249,7 @@ fun BottomSheetTextFont(
                                 .padding(vertical = 8.dp)
                                 .clickable {
                                     onFontChange(it)
+                                    fontSelectedSate = it
                                 },
                             text = "Font",
                             fontFamily = it,
@@ -233,9 +275,9 @@ sealed class ItemBottomFont(
     object PositionMiddle :
         ItemBottomFont(icon = R.drawable.ic_position_middle, value = TextAlign.Center)
 
-    object PositionLeft : ItemBottomFont(icon = R.drawable.ic_position_left, value = TextAlign.Left)
+    object PositionLeft : ItemBottomFont(icon = R.drawable.ic_position_left, value = TextAlign.Start)
 
     object PositionRight :
-        ItemBottomFont(icon = R.drawable.ic_postion_right, value = TextAlign.Left)
+        ItemBottomFont(icon = R.drawable.ic_postion_right, value = TextAlign.End)
 }
 

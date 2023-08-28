@@ -42,7 +42,7 @@ data class Diary(
 
 class DiaryElement(
     var textAlign: TextAlign,
-    var fontFamily: FontFamily,
+    var fontFamily: String,
     var fontSize: TextUnit,
     var textColor: Color,
 )
