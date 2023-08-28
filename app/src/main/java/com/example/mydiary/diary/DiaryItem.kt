@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -38,6 +40,7 @@ import com.example.mydiary.util.FontConverter
 @Composable
 fun BottomDiaryItem(
     diary: Diary,
+    keyword: String,
     onClickDiaryItem: (Diary) -> Unit,
     onClickDelete: () -> Unit,
     onClickEdit: (Diary) -> Unit,
@@ -62,14 +65,29 @@ fun BottomDiaryItem(
             verticalArrangement = Arrangement.SpaceAround,
             horizontalAlignment = Alignment.Start
         ) {
+            val annotatedString = buildAnnotatedString {
+                val str = diary.title
+                val boldStr = keyword
+                val startIndex = str?.indexOf(boldStr)
+                val endIndex = startIndex?.plus(boldStr.length)
+                append(str)
+                if (startIndex != null && endIndex != null) {
+                    addStyle(
+                        style = SpanStyle(color = Color.Red),
+                        start = startIndex,
+                        end = endIndex
+                    )
+                }
+            }
             Text(
-                text = diary.title ?: "",
+                text = annotatedString,
                 color = diary.diaryElement?.textColor ?: Color.Black,
                 fontWeight = FontWeight.Bold,
                 fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
                 fontFamily = FontConverter.getFromDatabase(diary.diaryElement?.fontFamily)
             )
-            Text(text = diary.time?.formatLongToDate().toString(),
+            Text(
+                text = diary.time?.formatLongToDate().toString(),
                 color = diary.diaryElement?.textColor ?: Color.Black,
                 fontWeight = FontWeight.Bold,
                 fontSize = diary.diaryElement?.fontSize ?: TextUnit.Unspecified,
