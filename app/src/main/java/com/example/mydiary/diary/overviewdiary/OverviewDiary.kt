@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.mydiary.R
 import com.example.mydiary.database.Diary
 import com.example.mydiary.datetime.formatLongToDate
@@ -76,7 +77,9 @@ fun OverViewDiary(
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.End
         ) {
@@ -125,15 +128,7 @@ fun OverViewDiary(
                     )
                 }
                 items(diary.photo.map { Uri.parse(it) }) {
-                    it?.let {
-                        bitmap = if (Build.VERSION.SDK_INT < 28) {
-                            MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-                        } else {
-                            val source = ImageDecoder.createSource(context.contentResolver, it)
-                            ImageDecoder.decodeBitmap(source)
-                        }
-                    }
-                    Image(bitmap = bitmap?.asImageBitmap()!!, contentDescription = null)
+                    AsyncImage(model = it, contentDescription = null)
                 }
 
             }
